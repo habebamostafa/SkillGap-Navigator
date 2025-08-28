@@ -168,6 +168,9 @@ def init_session_state():
     
     if 'current_app' not in st.session_state:
         st.session_state.current_app = None
+    
+    if 'assessment_completed' not in st.session_state:
+        st.session_state.assessment_completed = False
 
 def login_page():
     """Login and registration page"""
@@ -238,6 +241,7 @@ def main_dashboard():
             st.session_state.logged_in = False
             st.session_state.user = None
             st.session_state.current_app = None
+            st.session_state.assessment_completed = False
             st.rerun()
     
     # Check if user is new and needs assessment
@@ -360,29 +364,52 @@ def load_external_app(app_name):
     try:
         if app_name == "mcqs":
             # Import and run MCQs app
-            from mcqs import main as mcqs_main
-            mcqs_main()
+            try:
+                from apps.mcqs import main as mcqs_main
+                mcqs_main()
+            except ImportError:
+                # Try direct import if apps package doesn't exist
+                from mcqs import main as mcqs_main
+                mcqs_main()
             
         elif app_name == "skillgap":
             # Import and run skill gap app
-            from skillgap import main as skillgap_main
-            skillgap_main()
+            try:
+                from apps.skillgap import main as skillgap_main
+                skillgap_main()
+            except ImportError:
+                from skillgap import main as skillgap_main
+                skillgap_main()
             
         elif app_name == "interview":
             # Import and run interview app
-            from interview import main as interview_main
-            interview_main()
+            try:
+                from apps.interview import main as interview_main
+                interview_main()
+            except ImportError:
+                from interview import main as interview_main
+                interview_main()
             
         elif app_name == "recommend":
             # Import and run recommendation app
-            from recommend import main as recommend_main
-            recommend_main()
+            try:
+                from apps.recommend import main as recommend_main
+                recommend_main()
+            except ImportError:
+                from recommend import main as recommend_main
+                recommend_main()
             
     except ImportError as e:
         st.error(f"Could not load {app_name} application: {e}")
         st.markdown("Please make sure all application files are in the same directory.")
+        if st.button("🏠 Back to Dashboard"):
+            st.session_state.current_app = None
+            st.rerun()
     except Exception as e:
         st.error(f"Error running {app_name}: {e}")
+        if st.button("🏠 Back to Dashboard"):
+            st.session_state.current_app = None
+            st.rerun()
 
 def show_navigation():
     """Show navigation to return to main dashboard"""
