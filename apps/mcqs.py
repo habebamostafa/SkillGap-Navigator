@@ -383,28 +383,16 @@ def authenticate_user():
                     st.error("Username already exists")
 
 def check_user_authentication():
-    """Check if user is properly authenticated"""
+    """Check if user is properly authenticated - compatible with main.py structure"""
     if 'user' not in st.session_state:
         return False
     
-    # If user is a dictionary (incorrectly stored), try to convert it back to User object
+    # Handle both dictionary and User object formats
     if isinstance(st.session_state.user, dict):
-        try:
-            # Try to get the actual user from database
-            username = st.session_state.user.get('username')
-            if username and username in st.session_state.database.users:
-                st.session_state.user = st.session_state.database.users[username]
-                return True
-            else:
-                return False
-        except:
-            return False
+        return 'username' in st.session_state.user
     
-    # If it's already a User object, check if it still exists in database
     if hasattr(st.session_state.user, 'username'):
-        username = st.session_state.user.username
-        if username in st.session_state.database.users:
-            return True
+        return True
     
     return False
                     

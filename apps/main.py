@@ -160,6 +160,10 @@ def init_session_state():
     if 'db_manager' not in st.session_state:
         st.session_state.db_manager = DatabaseManager()
     
+    # Initialize database reference for compatibility with mcqs.py
+    if 'database' not in st.session_state:
+        st.session_state.database = st.session_state.db_manager
+    
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
     
@@ -232,7 +236,6 @@ def main_dashboard():
     
     # Sidebar with user info
     with st.sidebar:
-        # FIX: Use .get() method to safely access dictionary values
         st.markdown(f"### Welcome, {user.get('full_name', 'User')}")
         st.markdown(f"**Username:** {user.get('username', 'N/A')}")
         st.markdown(f"**Email:** {user.get('email', 'N/A')}")
@@ -279,12 +282,10 @@ def show_main_menu():
     user = st.session_state.user
     
     st.title("🎓 AI Learning Platform Dashboard")
-    # FIX: Use .get() method to safely access dictionary values
     st.markdown(f"### Welcome back, {user.get('full_name', 'User')}!")
     
     # Show user's current level
     level_names = {0: "Not Assessed", 1: "Beginner", 2: "Intermediate", 3: "Advanced"}
-    # FIX: Use .get() method to safely access dictionary values
     current_level = level_names.get(user.get('skill_level', 0), "Unknown")
     
     col1, col2, col3 = st.columns(3)
@@ -292,7 +293,6 @@ def show_main_menu():
     with col1:
         st.metric("Current Level", current_level)
     with col2:
-        # FIX: Use .get() method to safely access dictionary values
         status = "Completed" if user.get('assessment_completed') else "Pending"
         st.metric("Assessment Status", status)
     with col3:
@@ -363,6 +363,12 @@ def load_external_app(app_name):
     """Load external application modules"""
     try:
         if app_name == "mcqs":
+            # Clear any conflicting session state before loading mcqs
+            if 'assessment_started' in st.session_state:
+                del st.session_state.assessment_started
+            if 'practice_active' in st.session_state:
+                del st.session_state.practice_active
+            
             # Import and run MCQs app
             try:
                 from apps.mcqs import main as mcqs_main
