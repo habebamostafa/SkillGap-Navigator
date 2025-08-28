@@ -18,3 +18,5 @@ protobuf>=3.20.0
 python-dotenv>=0.19.0
 PyPDF2
 docx
+python-docx
+pickle-mixin
