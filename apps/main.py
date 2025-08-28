@@ -88,31 +88,48 @@ class DatabaseManager:
         except sqlite3.IntegrityError:
             return None
     
-    def authenticate_user(self, username, password):
-        """Authenticate user login"""
-        conn = sqlite3.connect(DATABASE_FILE)
-        cursor = conn.cursor()
+    def authenticate_user():
+        """Handle user authentication"""
+        st.title("🎓 Adaptive Assessment Platform")
         
-        password_hash = self.hash_password(password)
-        cursor.execute('''
-        SELECT id, username, email, full_name, is_new_user, assessment_completed, skill_level
-        FROM users WHERE username = ? AND password_hash = ?
-        ''', (username, password_hash))
+        tab1, tab2 = st.tabs(["Login", "Register"])
         
-        user = cursor.fetchone()
-        conn.close()
+        with tab1:
+            st.header("Login")
+            with st.form("login_form"):
+                username = st.text_input("Username")
+                password = st.text_input("Password", type="password")
+                submit_button = st.form_submit_button("Login")
+                
+                if submit_button:
+                    user = st.session_state.database.authenticate_user(username, password)
+                    if user:
+                        # Make sure we're storing the User object, not a dict
+                        st.session_state.user = user
+                        st.success(f"Welcome back, {user.username}!")
+                        st.rerun()
+                    else:
+                        st.error("Invalid username or password")
         
-        if user:
-            return {
-                'id': user[0],
-                'username': user[1],
-                'email': user[2],
-                'full_name': user[3],
-                'is_new_user': bool(user[4]),
-                'assessment_completed': bool(user[5]),
-                'skill_level': user[6]
-            }
-        return None
+        with tab2:
+            st.header("Register New Account")
+            with st.form("register_form"):
+                new_username = st.text_input("Choose Username")
+                new_email = st.text_input("Email Address")
+                new_password = st.text_input("Choose Password", type="password")
+                confirm_password = st.text_input("Confirm Password", type="password")
+                role = st.selectbox("Role", ["student", "teacher"])
+                register_button = st.form_submit_button("Register")
+                
+                if register_button:
+                    if new_password != confirm_password:
+                        st.error("Passwords don't match")
+                    elif len(new_password) < 6:
+                        st.error("Password must be at least 6 characters")
+                    elif st.session_state.database.create_user(new_username, new_password, new_email, role):
+                        st.success("Account created successfully! Please login.")
+                    else:
+                        st.error("Username already exists")
     
     def update_user_status(self, user_id, is_new_user=None, assessment_completed=None, skill_level=None):
         """Update user status after completing assessments"""
