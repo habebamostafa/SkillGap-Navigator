@@ -3,6 +3,8 @@ import random
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import time
 import torch
+import sys, os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # --- Model Setup with Proper Caching ---
 MODEL_NAME = "google/flan-t5-large"  # Using a smaller model for better performance

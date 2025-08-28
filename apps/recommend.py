@@ -3,6 +3,8 @@ import pandas as pd
 import joblib
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+import sys, os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # ============================
 # PAGE CONFIGURATION

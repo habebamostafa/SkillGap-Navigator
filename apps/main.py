@@ -5,6 +5,8 @@ from datetime import datetime
 import os
 import subprocess
 import sys
+import sys, os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Database setup
 DATABASE_FILE = "students.db"
