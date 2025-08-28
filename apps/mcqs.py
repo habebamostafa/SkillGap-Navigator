@@ -628,6 +628,20 @@ def process_answer(question, selected_answer):
         if last_change['question_number'] == env.total_questions_asked:
             level_names = {1: "Easy", 2: "Medium", 3: "Hard"}
             st.info(f"🎯 Difficulty adjusted to: {level_names[last_change['to_level']]}")
+
+    # بدل الأزرار هنا بعلامة في session_state
+    st.session_state["answer_processed"] = True
+
+    # Update question count
+    st.session_state.question_count += 1
+    st.session_state.current_question = None
+    
+    # Show level adjustment if any
+    if 'level_changes' in env.__dict__ and env.level_changes:
+        last_change = env.level_changes[-1]
+        if last_change['question_number'] == env.total_questions_asked:
+            level_names = {1: "Easy", 2: "Medium", 3: "Hard"}
+            st.info(f"🎯 Difficulty adjusted to: {level_names[last_change['to_level']]}")
     
     # Check if assessment should end
     if env.total_questions_asked >= env.max_questions or env._check_completion():
@@ -900,7 +914,7 @@ def run_practice_session():
     with st.form(f"practice_form_{st.session_state.practice_current_q}"):
         selected_answer = st.radio("Select your answer:", current_question['options'])
         submit_button = st.form_submit_button("Submit Answer")
-        
+
         if submit_button:
             # Record answer
             is_correct = current_question['correct_answer'] == selected_answer
@@ -909,23 +923,31 @@ def run_practice_session():
                 'selected': selected_answer,
                 'correct': is_correct
             })
-            
+
             # Show feedback
             if is_correct:
                 st.success("✅ Correct!")
             else:
                 st.error(f"❌ Incorrect. The correct answer was: {current_question['correct_answer']}")
-            
+
             if 'explanation' in current_question:
                 st.info(f"💡 **Explanation:** {current_question['explanation']}")
-            
-            # Move to next question
+
+            # Move to next question index
             st.session_state.practice_current_q += 1
-            
-            if st.session_state.practice_current_q < st.session_state.practice_total:
-                st.button("Next Question", on_click=lambda: st.rerun())
-            else:
-                st.button("Show Results", on_click=lambda: st.rerun())
+
+            st.session_state.answer_submitted = True
+
+
+    # Navigation buttons (outside the form)
+    if st.session_state.get("answer_submitted", False):
+        if st.session_state.practice_current_q < st.session_state.practice_total:
+            st.button("Next Question", on_click=lambda: st.rerun())
+        else:
+            st.button("Show Results", on_click=lambda: st.rerun())
+
+        # Reset the flag after showing buttons
+        st.session_state.answer_submitted = False
 
 def show_practice_results():
     """Show practice session results"""
