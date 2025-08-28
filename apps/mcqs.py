@@ -1407,6 +1407,7 @@ def system_settings_page():
             st.success("Settings saved! (This is a demo)")
 
 # Main application flow
+# Main application flow
 def main():
     """Main application entry point"""
     
@@ -1436,8 +1437,8 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    # Check if user is logged in
-    if 'user' not in st.session_state:
+    # Check if user is properly authenticated
+    if not check_user_authentication():
         authenticate_user()
         return
     
@@ -1447,7 +1448,8 @@ def main():
         if st.button("🚪 Logout"):
             # Clear all session state
             for key in list(st.session_state.keys()):
-                del st.session_state[key]
+                if key != 'database' and key != 'ai_generator':  # Keep these for performance
+                    del st.session_state[key]
             st.rerun()
     
     # Check for active assessment
