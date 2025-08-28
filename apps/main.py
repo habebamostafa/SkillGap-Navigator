@@ -229,9 +229,10 @@ def main_dashboard():
     
     # Sidebar with user info
     with st.sidebar:
-        st.markdown(f"### Welcome, {user['full_name']}")
-        st.markdown(f"**Username:** {user['username']}")
-        st.markdown(f"**Email:** {user['email']}")
+        # FIX: Use .get() method to safely access dictionary values
+        st.markdown(f"### Welcome, {user.get('full_name', 'User')}")
+        st.markdown(f"**Username:** {user.get('username', 'N/A')}")
+        st.markdown(f"**Email:** {user.get('email', 'N/A')}")
         
         if st.button("Logout", type="secondary"):
             st.session_state.logged_in = False
@@ -240,7 +241,7 @@ def main_dashboard():
             st.rerun()
     
     # Check if user is new and needs assessment
-    if user['is_new_user'] and not user['assessment_completed']:
+    if user.get('is_new_user') and not user.get('assessment_completed'):
         show_new_user_flow()
     else:
         show_main_menu()
@@ -274,18 +275,22 @@ def show_main_menu():
     user = st.session_state.user
     
     st.title("🎓 AI Learning Platform Dashboard")
-    st.markdown(f"### Welcome back, {user['full_name']}!")
+    # FIX: Use .get() method to safely access dictionary values
+    st.markdown(f"### Welcome back, {user.get('full_name', 'User')}!")
     
     # Show user's current level
     level_names = {0: "Not Assessed", 1: "Beginner", 2: "Intermediate", 3: "Advanced"}
-    current_level = level_names.get(user['skill_level'], "Unknown")
+    # FIX: Use .get() method to safely access dictionary values
+    current_level = level_names.get(user.get('skill_level', 0), "Unknown")
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.metric("Current Level", current_level)
     with col2:
-        st.metric("Assessment Status", "Completed" if user['assessment_completed'] else "Pending")
+        # FIX: Use .get() method to safely access dictionary values
+        status = "Completed" if user.get('assessment_completed') else "Pending"
+        st.metric("Assessment Status", status)
     with col3:
         st.metric("Account Type", "Student")
     
