@@ -110,7 +110,7 @@ def render_sidebar():
     }
     
     selected_track = st.sidebar.selectbox(
-        "chosse track :",
+        "Choose Track:",
         options=available_tracks,
         format_func=lambda x: track_descriptions.get(x, x.title()),
         key="track_selector"
@@ -120,24 +120,24 @@ def render_sidebar():
     st.sidebar.subheader("🤖 Agent Settings")
     
     agent_type = st.sidebar.selectbox(
-        "kind of agent :",
+        "Agent Type:",
         options=["main", "conservative", "aggressive", "ensemble"],
         format_func=lambda x: {
-            "main": "🎯 main",
-            "conservative": "🛡️ conservative", 
-            "aggressive": "⚡ aggressive",
-            "ensemble": "🎭 ensemble"
+            "main": "🎯 Main",
+            "conservative": "🛡️ Conservative", 
+            "aggressive": "⚡ Aggressive",
+            "ensemble": "🎭 Ensemble"
         }.get(x, x)
     )
     
     adaptation_strategy = st.sidebar.selectbox(
-        " strategy:",
+        "Adaptation Strategy:",
         options=["rl_based", "conservative", "aggressive", "ability_based"],
         format_func=lambda x: {
-            "rl_based": "🧠  rl_based",
-            "conservative": "🐌 conservative",
-            "aggressive": "🚀 aggressive", 
-            "ability_based": "📈 ability_based "
+            "rl_based": "🧠 RL-Based",
+            "conservative": "🐌 Conservative",
+            "aggressive": "🚀 Aggressive", 
+            "ability_based": "📈 Ability-Based"
         }.get(x, x)
     )
     
@@ -145,7 +145,7 @@ def render_sidebar():
     st.sidebar.subheader("📋 Assessment Parameters")
     
     max_questions = st.sidebar.slider(
-        "maximum of questions  :",
+        "Maximum Questions:",
         min_value=5,
         max_value=20,
         value=10,
@@ -153,7 +153,7 @@ def render_sidebar():
     )
     
     confidence_threshold = st.sidebar.slider(
-        "Confidence :",
+        "Confidence Threshold:",
         min_value=0.5,
         max_value=0.95,
         value=0.8,
@@ -167,7 +167,7 @@ def render_sidebar():
 def render_analytics():
     """Render analytics dashboard"""
     if not st.session_state.get("env") or not st.session_state.env.question_history:
-        st.warning("no data")
+        st.warning("No assessment data available. Complete an assessment first.")
         return
     
     env = st.session_state.env
@@ -180,18 +180,18 @@ def render_analytics():
     
     with col1:
         total_questions = len(env.question_history)
-        st.metric(" total questions", total_questions)
+        st.metric("Total Questions", total_questions)
     
     with col2:
         correct_answers = sum(1 for q in env.question_history if q['is_correct'])
         accuracy = correct_answers / total_questions if total_questions > 0 else 0
-        st.metric("accuracy", f"{accuracy:.1%}")
+        st.metric("Accuracy", f"{accuracy:.1%}")
     
     with col3:
-        st.metric("ability ", f"{env.student_ability:.1%}")
+        st.metric("Current Ability", f"{env.student_ability:.1%}")
     
     with col4:
-        st.metric("confident score ", f"{env.confidence_score:.1%}")
+        st.metric("Confidence Score", f"{env.confidence_score:.1%}")
     
     # Progress visualization
     if len(env.performance_history) > 1:
@@ -295,7 +295,7 @@ def render_analytics():
 def render_question():
     """Render the current question"""
     if not st.session_state.current_question:
-        st.error("error")
+        st.error("No question available. Please restart the assessment.")
         return
     
     q = st.session_state.current_question
@@ -305,15 +305,15 @@ def render_question():
     col1, col2, col3 = st.columns([2, 1, 1])
     
     with col1:
-        st.markdown(f"###  question number {env.total_questions_asked}")
+        st.markdown(f"### Question #{env.total_questions_asked}")
     
     with col2:
         level_emoji = {1: "🟢", 2: "🟡", 3: "🔴"}
-        level_name = {1: "easy", 2: "medium", 3: "hard"}
-        st.markdown(f"**levels:** {level_emoji.get(env.current_level, '⚪')} {level_name.get(env.current_level, ' uncertained')}")
+        level_name = {1: "Easy", 2: "Medium", 3: "Hard"}
+        st.markdown(f"**Level:** {level_emoji.get(env.current_level, '⚪')} {level_name.get(env.current_level, 'Unknown')}")
     
     with col3:
-        st.markdown(f"**ability:** {env.student_ability:.1%}")
+        st.markdown(f"**Ability:** {env.student_ability:.1%}")
     
     # Question content
     st.markdown(f"""
@@ -327,7 +327,7 @@ def render_question():
         st.session_state.selected_answer = None
     
     st.session_state.selected_answer = st.radio(
-        " choesse answer :",
+        "Choose your answer:",
         q["options"],
         key=f"question_{env.total_questions_asked}",
         index=None
@@ -340,13 +340,13 @@ def render_question():
         confirm_disabled = (st.session_state.selected_answer is None or 
                           st.session_state.answer_confirmed)
         
-        if st.button("✅ confirm ", disabled=confirm_disabled):
+        if st.button("✅ Confirm Answer", disabled=confirm_disabled):
             st.session_state.answer_confirmed = True
             st.rerun()
     
     with col2:
         if st.session_state.answer_confirmed:
-            if st.button("➡️  next question"):
+            if st.button("➡️ Next Question"):
                 process_answer()
     
     with col3:
@@ -354,9 +354,9 @@ def render_question():
             # Show correct answer
             is_correct = q['correct_answer'] == st.session_state.selected_answer
             if is_correct:
-                st.success("🎉 correct !")
+                st.success("🎉 Correct!")
             else:
-                st.error(f"❌ wrong ,the correct is  : {q['correct_answer']}")
+                st.error(f"❌ Incorrect. The correct answer is: {q['correct_answer']}")
             
             # Show explanation if available
             if 'explanation' in q:
@@ -422,8 +422,8 @@ def render_results():
     
     st.markdown("""
     <div class="success-message">
-        <h2 style="margin: 0;">🎉 exam is done sucessfully   !</h2>
-        <p style="margin: 0.5rem 0 0 0;"> your results  :</p>
+        <h2 style="margin: 0;">🎉 Assessment Complete!</h2>
+        <p style="margin: 0.5rem 0 0 0;">Here are your results:</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -435,42 +435,42 @@ def render_results():
     
     with col1:
         st.metric(
-            "final score ",
+            "Final Score",
             f"{summary['correct_answers']}/{summary['total_questions']}",
             f"{summary['final_score']:.1%}"
         )
     
     with col2:
         st.metric(
-            " ability",
+            "Final Ability",
             f"{summary['final_ability']:.1%}",
         )
     
     with col3:
         st.metric(
-            "confident ",
+            "Confidence Score",
             f"{summary['confidence_score']:.1%}",
         )
     
     with col4:
         recommended_level = summary['recommended_level']
-        level_names = {1: "beginner", 2: "intermediate", 3: "advanced"}
+        level_names = {1: "Beginner", 2: "Intermediate", 3: "Advanced"}
         st.metric(
-            "  recommded level",
-            level_names.get(recommended_level, "uncertained ")
+            "Recommended Level",
+            level_names.get(recommended_level, "Unknown")
         )
     
     # Performance by level
-    st.subheader("📊  Performance by level ")
+    st.subheader("📊 Performance by Level")
     
     if summary['level_performance']:
         level_data = []
         for level, perf in summary['level_performance'].items():
             level_data.append({
                 'Level': f"Level {level}",
-                ' questions': perf['questions'],
-                ' correct answers': perf['correct'],
-                ' accuracy': f"{perf['accuracy']:.1%}"
+                'Questions': perf['questions'],
+                'Correct Answers': perf['correct'],
+                'Accuracy': f"{perf['accuracy']:.1%}"
             })
         
         df = pd.DataFrame(level_data)
@@ -480,23 +480,24 @@ def render_results():
         fig = px.bar(
             df, 
             x='Level', 
-            y=' accuracy',
-            title=" Performance by level",
-            color=' accuracy',
+            y='Accuracy',
+            title="Performance by Level",
+            color='Accuracy',
             color_continuous_scale='RdYlGn'
         )
         st.plotly_chart(fig, use_container_width=True)
     
     # Detailed recommendations
-    st.subheader("💡 recommendations and next step ")
+    st.subheader("💡 Recommendations & Next Steps")
 
+    # Add your recommendation logic here based on the assessment results
     
     # Restart option
     st.markdown("---")
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("🔄 Restart exam ", type="primary"):
+        if st.button("🔄 Restart Assessment", type="primary"):
             # Reset session state
             for key in list(st.session_state.keys()):
                 if key not in ['track_selector']:  # Keep track selection
@@ -504,18 +505,19 @@ def render_results():
             st.rerun()
     
     with col2:
-        if st.button("📊 show analytics  "):
+        if st.button("📊 Show Analytics"):
             st.session_state.show_analytics = True
             st.rerun()
 
 def main():
     """Main application function"""
     initialize_session_state()
+    
     # Header
     st.markdown("""
     <div class="main-header">
-        <h1> smart adaptive learning system </h1>
-        <p>evaluate your technical skills </p>
+        <h1>🎯 Smart Adaptive Assessment System</h1>
+        <p>Evaluate your technical skills with our AI-powered adaptive assessment</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -528,7 +530,7 @@ def main():
     
     # Navigation
     if st.session_state.show_analytics:
-        if st.button("back to test"):
+        if st.button("← Back to Assessment"):
             st.session_state.show_analytics = False
             st.rerun()
         render_analytics()
@@ -537,7 +539,7 @@ def main():
     # Main content based on state
     if not st.session_state.initialized:
         # Welcome screen
-        st.header("🚀 start your carrer  ")
+        st.header("🚀 Start Your Assessment")
         
         # Track statistics
         track_stats = get_question_statistics(selected_track)
@@ -545,36 +547,35 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader(f"📊 statisc {selected_track.upper()}")
-            st.write(f"** total questions:** {track_stats['total_questions']}")
+            st.subheader(f"📊 {selected_track.upper()} Statistics")
+            st.write(f"**Total Questions:** {track_stats['total_questions']}")
             
             for level, info in track_stats['levels'].items():
-                st.write(f"**{info['difficulty']}:** {info['count']} question")
+                st.write(f"**{info['difficulty']}:** {info['count']} questions")
         
         with col2:
-            st.subheader("ℹ️ test info")
-            st.write(f"** max questions:** {max_questions}")
-
+            st.subheader("ℹ️ Assessment Information")
+            st.write(f"**Max Questions:** {max_questions}")
+            st.write(f"**Confidence Threshold:** {confidence_threshold:.0%}")
+            st.write(f"**Adaptation Strategy:** {adaptation_strategy}")
+            st.write(f"**Agent Type:** {agent_type}")
         
-        if st.button("🎯 start test", type="primary", use_container_width=True):
-        # Initialize environment and agent
+        if st.button("🎯 Start Assessment", type="primary", use_container_width=True):
+            # Initialize environment and agent
             st.session_state.env = AdaptiveAssessmentEnv(
-                track=selected_track
+                track=selected_track,
+                max_questions=max_questions,
+                confidence_threshold=confidence_threshold
             )
-
-            st.session_state.agent = RLAssessmentAgent(
-                env=st.session_state.env,
-            )
-            
-            st.session_state.initialized = True
-            st.success("✅ Assessment initialized! Ready to start.")
-            st.session_state.env = AdaptiveAssessmentEnv(track=selected_track)
-            st.session_state.env.max_questions = max_questions
-            st.session_state.env.confidence_threshold = confidence_threshold
             
             # Initialize agent based on type
             if agent_type == "ensemble":
                 st.session_state.agent = RLAssessmentAgent(st.session_state.env)
+            else:
+                st.session_state.agent = RLAssessmentAgent(
+                    env=st.session_state.env,
+                    agent_type=agent_type
+                )
             
             # Get first question
             first_question = st.session_state.env.get_question()
@@ -583,27 +584,16 @@ def main():
                 st.session_state.initialized = True
                 st.rerun()
             else:
-                st.error("❌ error")
+                st.error("❌ Failed to initialize assessment. Please try again.")
     
     elif st.session_state.show_results:
-        
-        final_results = {
-            'student_id': st.session_state.get('student_id'),
-            'app_type': 'assessment',
-            'score': env.get_final_score(),
-            'ability_level': env.student_ability,
-            'questions_answered': env.total_questions_asked,
-            'time_spent': env.get_time_spent(),
-            'details': env.get_assessment_summary()
-        }
-        
         render_results()    
     else:
         # Main assessment interface
         if st.session_state.current_question:
             render_question()
         else:
-            st.error("❌ error")
+            st.error("❌ No question available. Please restart the assessment.")
     
     # Progress indicator
     if st.session_state.initialized and not st.session_state.show_results:
@@ -611,16 +601,15 @@ def main():
         progress = min(env.total_questions_asked / env.max_questions, 1.0)
         
         st.sidebar.markdown("---")
-        st.sidebar.subheader("📈 progress")
+        st.sidebar.subheader("📈 Progress")
         st.sidebar.progress(progress)
-        st.sidebar.write(f"question  {env.total_questions_asked} من {env.max_questions}")
+        st.sidebar.write(f"Question {env.total_questions_asked} of {env.max_questions}")
         
         # Real-time metrics
         if env.question_history:
             correct = sum(1 for q in env.question_history if q['is_correct'])
             accuracy = correct / len(env.question_history)
             
-            st.sidebar.metric(" accuracy", f"{accuracy:.1%}")
-            st.sidebar.metric(" student ability", f"{env.student_ability:.1%}")
-            st.sidebar.metric(" confidence score", f"{env.confidence_score:.1%}")
-
+            st.sidebar.metric("Accuracy", f"{accuracy:.1%}")
+            st.sidebar.metric("Student Ability", f"{env.student_ability:.1%}")
+            st.sidebar.metric("Confidence Score", f"{env.confidence_score:.1%}")
