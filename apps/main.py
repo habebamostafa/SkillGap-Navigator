@@ -440,12 +440,12 @@ def main():
     """, unsafe_allow_html=True)
     
     # Initialize session state
-    init_session_state()
+    # init_session_state()
     
     # Check if we're running an external app
     if st.session_state.get('current_app'):
         show_navigation()
-        st.session_state.current_app="skillgap"
+        st.session_state.current_app="interview"
         load_external_app(st.session_state.current_app)
     else:
         # Main application flow
