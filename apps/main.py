@@ -5,8 +5,7 @@ from datetime import datetime
 import os
 import subprocess
 import sys
-import sys, os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import importlib.util
 
 # Database setup
 DATABASE_FILE = "students.db"
@@ -167,9 +166,6 @@ def init_session_state():
     if 'user' not in st.session_state:
         st.session_state.user = None
     
-    if 'model_loaded' not in st.session_state:
-        st.session_state.model_loaded = False
-    
     if 'current_app' not in st.session_state:
         st.session_state.current_app = None
 
@@ -240,6 +236,7 @@ def main_dashboard():
         if st.button("Logout", type="secondary"):
             st.session_state.logged_in = False
             st.session_state.user = None
+            st.session_state.current_app = None
             st.rerun()
     
     # Check if user is new and needs assessment
@@ -345,52 +342,36 @@ def run_skillgap_app():
 
 def run_interview_app():
     """Run the interview preparation application"""
-    try:
-        # Import and run the interview app
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("interview", "interview.py")
-        interview_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(interview_module)
-        interview_module.main()
-    except Exception as e:
-        st.error(f"Could not load interview application: {e}")
-        st.markdown("Please make sure interview.py is in the same directory.")
+    st.session_state.current_app = "interview"
+    st.rerun()
 
 def run_recommend_app():
     """Run the course recommendation application"""
-    try:
-        # Import and run the recommendation app
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("recommend", "recommend.py")
-        recommend_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(recommend_module)
-        recommend_module.main()
-    except Exception as e:
-        st.error(f"Could not load recommendation application: {e}")
-        st.markdown("Please make sure recommend.py is in the same directory.")
+    st.session_state.current_app = "recommend"
+    st.rerun()
 
 def load_external_app(app_name):
     """Load external application modules"""
     try:
         if app_name == "mcqs":
             # Import and run MCQs app
-            import mcqs
-            mcqs.main()
+            from mcqs import main as mcqs_main
+            mcqs_main()
             
         elif app_name == "skillgap":
             # Import and run skill gap app
-            import skillgap
-            skillgap.main()
+            from skillgap import main as skillgap_main
+            skillgap_main()
             
         elif app_name == "interview":
             # Import and run interview app
-            import interview
-            interview.main()
+            from interview import main as interview_main
+            interview_main()
             
         elif app_name == "recommend":
             # Import and run recommendation app
-            import recommend
-            recommend.main()
+            from recommend import main as recommend_main
+            recommend_main()
             
     except ImportError as e:
         st.error(f"Could not load {app_name} application: {e}")
