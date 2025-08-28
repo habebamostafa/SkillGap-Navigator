@@ -13,7 +13,7 @@ from dataclasses import dataclass
 import requests
 import random
 import sys, os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Enhanced imports from your existing modules
 from core.environment import AdaptiveAssessmentEnv
