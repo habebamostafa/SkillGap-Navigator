@@ -445,7 +445,7 @@ def main():
     # Check if we're running an external app
     if st.session_state.get('current_app'):
         show_navigation()
-        st.session_state.current_app="interview"
+        st.session_state.current_app="recommend"
         load_external_app(st.session_state.current_app)
     else:
         # Main application flow
