@@ -338,75 +338,6 @@ if 'database' not in st.session_state:
 
 if 'ai_generator' not in st.session_state:
     st.session_state.ai_generator = AIQuestionGenerator()
-
-def authenticate_user():
-    """Handle user authentication"""
-    st.title("🎓 Adaptive Assessment Platform")
-    
-    tab1, tab2 = st.tabs(["Login", "Register"])
-    
-    with tab1:
-        st.header("Login")
-        with st.form("login_form"):
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            submit_button = st.form_submit_button("Login")
-            
-            if submit_button:
-                user = st.session_state.database.authenticate_user(username, password)
-                if user:
-                    # Make sure we're storing the User object, not a dict
-                    st.session_state.user = user
-                    st.success(f"Welcome back, {user.username}!")
-                    st.rerun()
-                else:
-                    st.error("Invalid username or password")
-    
-    with tab2:
-        st.header("Register New Account")
-        with st.form("register_form"):
-            new_username = st.text_input("Choose Username")
-            new_email = st.text_input("Email Address")
-            new_password = st.text_input("Choose Password", type="password")
-            confirm_password = st.text_input("Confirm Password", type="password")
-            role = st.selectbox("Role", ["student", "teacher"])
-            register_button = st.form_submit_button("Register")
-            
-            if register_button:
-                if new_password != confirm_password:
-                    st.error("Passwords don't match")
-                elif len(new_password) < 6:
-                    st.error("Password must be at least 6 characters")
-                elif st.session_state.database.create_user(new_username, new_password, new_email, role):
-                    st.success("Account created successfully! Please login.")
-                else:
-                    st.error("Username already exists")
-
-def check_user_authentication():
-    """Check if user is properly authenticated"""
-    if 'user' not in st.session_state:
-        return False
-    
-    # If user is a dictionary (incorrectly stored), try to convert it back to User object
-    if isinstance(st.session_state.user, dict):
-        try:
-            # Try to get the actual user from database
-            username = st.session_state.user.get('username')
-            if username and username in st.session_state.database.users:
-                st.session_state.user = st.session_state.database.users[username]
-                return True
-            else:
-                return False
-        except:
-            return False
-    
-    # If it's already a User object, check if it still exists in database
-    if hasattr(st.session_state.user, 'username'):
-        username = st.session_state.user.username
-        if username in st.session_state.database.users:
-            return True
-    
-    return False
                     
 def student_dashboard():
     """Student dashboard interface"""
@@ -1486,11 +1417,7 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    # Check if user is properly authenticated
-    if not check_user_authentication():
-        authenticate_user()
-        return
-    
+
     # Show logout button
     with st.sidebar:
         st.write(f"Logged in as: **{st.session_state.user.username}** ({st.session_state.user.role})")
