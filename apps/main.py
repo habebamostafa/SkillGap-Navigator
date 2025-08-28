@@ -249,7 +249,7 @@ def show_main_menu():
     """Show main menu for existing users"""
     user = st.session_state.user
     
-    st.title("🎓 AI Learning Platform Dashboard")
+    st.title("🎓 SkillGap carrer Platform Dashboard")
     st.markdown(f"### Welcome back, {user.get('full_name', 'User')}!")
     
     # Show user's current level
