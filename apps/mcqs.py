@@ -334,7 +334,7 @@ class AIQuestionGenerator:
 
 # Initialize global components
 if 'database' not in st.session_state:
-    st.session_state.db_manager = SimpleDatabase()
+    st.session_state.database = SimpleDatabase()
 
 if 'ai_generator' not in st.session_state:
     st.session_state.ai_generator = AIQuestionGenerator()
@@ -383,16 +383,28 @@ def authenticate_user():
                     st.error("Username already exists")
 
 def check_user_authentication():
-    """Check if user is properly authenticated - compatible with main.py structure"""
+    """Check if user is properly authenticated"""
     if 'user' not in st.session_state:
         return False
     
-    # Handle both dictionary and User object formats
+    # If user is a dictionary (incorrectly stored), try to convert it back to User object
     if isinstance(st.session_state.user, dict):
-        return 'username' in st.session_state.user
+        try:
+            # Try to get the actual user from database
+            username = st.session_state.user.get('username')
+            if username and username in st.session_state.database.users:
+                st.session_state.user = st.session_state.database.users[username]
+                return True
+            else:
+                return False
+        except:
+            return False
     
+    # If it's already a User object, check if it still exists in database
     if hasattr(st.session_state.user, 'username'):
-        return True
+        username = st.session_state.user.username
+        if username in st.session_state.database.users:
+            return True
     
     return False
                     
