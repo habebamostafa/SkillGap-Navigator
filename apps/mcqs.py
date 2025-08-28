@@ -1,1225 +1,626 @@
-# app.py - Complete Adaptive Assessment Application
 import streamlit as st
-import pandas as pd
-import numpy as np
-import json
-import hashlib
-import time
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
 import plotly.express as px
 import plotly.graph_objects as go
-from dataclasses import dataclass
+from plotly.subplots import make_subplots
+import pandas as pd
+import json
+from datetime import datetime
 import requests
-import random
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import os
+from urllib.parse import parse_qs, urlparse
 
-# Enhanced imports from your existing modules
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+# Import our enhanced modules
 from core.environment import AdaptiveAssessmentEnv
-from core.agent import RLAssessmentAgent
-from data.questions import get_adaptive_question, generate_interview_questions, _question_manager
+from core.agent import RLAssessmentAgent, AdaptiveStrategy
+from data.questions import get_adaptive_question, _question_manager, get_question_statistics
 
-# Configure Streamlit page
+# Page configuration
 st.set_page_config(
-    page_title="Adaptive Assessment Platform",
-    page_icon="🎓",
+    page_title="🎯 Adaptive Assessment System",
+    page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Database classes for user management
-@dataclass
-class User:
-    username: str
-    password_hash: str
-    email: str
-    created_at: datetime
-    role: str = "student"
-    profile_data: Dict = None
+# Custom CSS for better styling
+st.markdown("""
+<style>
+    .main-header {
+        text-align: center;
+        padding: 1rem;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    
+    .metric-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: 4px solid #667eea;
+    }
+    
+    .question-card {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+        margin: 1rem 0;
+    }
+    
+    .success-message {
+        background: #d4edda;
+        color: #155724;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .warning-message {
+        background: #fff3cd;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #ffeaa7;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-@dataclass
-class AssessmentSession:
-    session_id: str
-    username: str
-    track: str
-    started_at: datetime
-    completed_at: Optional[datetime] = None
-    final_score: float = 0.0
-    questions_answered: int = 0
-    ability_level: float = 0.5
-    performance_data: Dict = None
+# Initialize session state
+def initialize_session_state():
+    """Initialize all session state variables"""
+    defaults = {
+        "initialized": False,
+        "answer_confirmed": False,
+        "show_results": False,
+        "current_question": None,
+        "selected_answer": None,
+        "assessment_complete": False,
+        "show_analytics": False,
+        "agent_type": "main",
+        "adaptation_strategy": "rl_based",
+        "env": None,
+        "agent": None
+    }
+    
+    for key, default_value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = default_value
 
-
-# AI Question Generator
-class AIQuestionGenerator:
-    """Generate questions using free AI APIs"""
-    
-    def __init__(self):
-        self.api_endpoints = {
-            # Using free APIs that don't require tokens
-            "huggingface_inference": "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium",
-            "openai_compatible": None  # Can be configured for local models
-        }
-    
-    def generate_question_with_ai(self, track: str, level: int, topic: str = None) -> Dict:
-        """Generate question using AI (fallback to template if API fails)"""
-        try:
-            # Try to generate with AI
-            question_text = self._call_ai_api(track, level, topic)
-            if question_text:
-                return self._create_question_from_ai_text(question_text, track, level, topic)
-        except Exception as e:
-            st.warning(f"AI generation failed: {e}")
-        
-        # Fallback to enhanced template generation
-        return self._generate_template_question(track, level, topic)
-    
-    def _call_ai_api(self, track: str, level: int, topic: str) -> Optional[str]:
-        """Call AI API to generate question text"""
-        difficulty_names = {1: "beginner", 2: "intermediate", 3: "advanced"}
-        difficulty = difficulty_names.get(level, "intermediate")
-        
-        prompt = f"Create a {difficulty} level multiple choice question about {topic or track}. The question should test practical knowledge in {track} development."
-        
-        # Try different methods to generate content
-        try:
-            # Method 1: Use requests to call a free API (if available)
-            # This is a placeholder - in real implementation, you'd use actual free APIs
-            response = self._generate_with_template_ai(prompt, track, level)
-            return response
-        except:
-            return None
-    
-    def _generate_with_template_ai(self, prompt: str, track: str, level: int) -> str:
-        """Generate using enhanced templates that simulate AI"""
-        
-        question_templates = {
-            "web": {
-                1: [
-                    "What is the primary purpose of {concept} in web development?",
-                    "Which {concept} is most commonly used for {purpose}?",
-                    "How do you implement basic {concept} functionality?",
-                    "What happens when you use {concept} in a web application?"
-                ],
-                2: [
-                    "What are the best practices when implementing {concept} in production?",
-                    "How would you optimize {concept} for better performance?",
-                    "What security considerations apply to {concept}?",
-                    "How do you handle {concept} errors in real applications?"
-                ],
-                3: [
-                    "What advanced patterns can be used with {concept} for scalability?",
-                    "How would you architect {concept} for enterprise applications?",
-                    "What are the performance implications of different {concept} approaches?",
-                    "How do you implement {concept} with modern frameworks and patterns?"
-                ]
-            },
-            "ai": {
-                1: [
-                    "What is the basic concept of {concept} in machine learning?",
-                    "Which algorithm is best suited for {concept} problems?",
-                    "What is the difference between {concept} and related techniques?",
-                    "How do you prepare data for {concept} tasks?"
-                ],
-                2: [
-                    "What evaluation metrics are appropriate for {concept} models?",
-                    "How do you handle overfitting in {concept} applications?",
-                    "What preprocessing steps are crucial for {concept} success?",
-                    "How do you optimize hyperparameters for {concept} models?"
-                ],
-                3: [
-                    "What advanced architectures work best for {concept} at scale?",
-                    "How do you implement {concept} in production environments?",
-                    "What are the ethical considerations when deploying {concept}?",
-                    "How do you handle bias and fairness in {concept} systems?"
-                ]
-            },
-            "cyber": {
-                1: [
-                    "What is {concept} and why is it important for security?",
-                    "Which tool is commonly used for {concept} analysis?",
-                    "What are the basic principles of {concept}?",
-                    "How does {concept} protect against common threats?"
-                ],
-                2: [
-                    "What are the implementation challenges of {concept}?",
-                    "How do you monitor and maintain {concept} systems?",
-                    "What compliance requirements relate to {concept}?",
-                    "How do you integrate {concept} with existing infrastructure?"
-                ],
-                3: [
-                    "What advanced {concept} techniques are used in enterprise security?",
-                    "How do you design {concept} for zero-trust architectures?",
-                    "What emerging threats does {concept} address?",
-                    "How do you implement {concept} across cloud and hybrid environments?"
-                ]
-            }
-        }
-        
-        # Get appropriate template
-        templates = question_templates.get(track, question_templates["web"])
-        level_templates = templates.get(level, templates[2])
-        template = random.choice(level_templates)
-        
-        # Generate concept based on track
-        concepts = {
-            "web": ["responsive design", "API integration", "state management", "component architecture", "routing"],
-            "ai": ["neural networks", "feature engineering", "model selection", "data preprocessing", "model evaluation"],
-            "cyber": ["encryption", "network security", "access control", "vulnerability assessment", "incident response"],
-            "data": ["data visualization", "statistical analysis", "data cleaning", "machine learning pipelines", "big data processing"],
-            "mobile": ["cross-platform development", "native performance", "user interface design", "data persistence", "push notifications"],
-            "devops": ["container orchestration", "continuous integration", "infrastructure automation", "monitoring", "deployment strategies"]
-        }
-        
-        concept = random.choice(concepts.get(track, concepts["web"]))
-        purpose_map = {
-            "responsive design": "mobile compatibility",
-            "API integration": "data communication",
-            "neural networks": "pattern recognition",
-            "encryption": "data protection"
-        }
-        
-        purpose = purpose_map.get(concept, "system functionality")
-        
-        return template.format(concept=concept, purpose=purpose)
-    
-    def _create_question_from_ai_text(self, question_text: str, track: str, level: int, topic: str) -> Dict:
-        """Create a complete question object from AI-generated text"""
-        
-        # Generate options based on track and level
-        options = self._generate_smart_options(track, level, topic, question_text)
-        
-        return {
-            'text': question_text,
-            'options': options,
-            'correct_answer': options[0],  # First option is always correct
-            'explanation': f"This {['beginner', 'intermediate', 'advanced'][level-1]} level question tests knowledge of {topic or track} concepts.",
-            'generated': True,
-            'ai_generated': True,
-            'topic': topic or track,
-            'level': level
-        }
-    
-    def _generate_smart_options(self, track: str, level: int, topic: str, question: str) -> List[str]:
-        """Generate intelligent options based on context"""
-        
-        option_pools = {
-            "web": {
-                "frameworks": ["React", "Vue.js", "Angular", "Svelte"],
-                "languages": ["JavaScript", "TypeScript", "Python", "PHP"],
-                "tools": ["Webpack", "Vite", "Rollup", "Parcel"],
-                "concepts": ["Virtual DOM", "Server-side rendering", "Progressive Web Apps", "Single Page Applications"]
-            },
-            "ai": {
-                "algorithms": ["Random Forest", "Support Vector Machine", "Neural Networks", "K-Means"],
-                "libraries": ["TensorFlow", "PyTorch", "Scikit-learn", "Keras"],
-                "concepts": ["Supervised Learning", "Unsupervised Learning", "Reinforcement Learning", "Deep Learning"],
-                "metrics": ["Accuracy", "Precision", "Recall", "F1-Score"]
-            },
-            "cyber": {
-                "tools": ["Wireshark", "Nmap", "Metasploit", "Burp Suite"],
-                "protocols": ["HTTPS", "SSL/TLS", "VPN", "SSH"],
-                "concepts": ["Zero Trust", "Defense in Depth", "Least Privilege", "Multi-factor Authentication"],
-                "attacks": ["Phishing", "SQL Injection", "Cross-site Scripting", "Man-in-the-middle"]
-            }
-        }
-        
-        # Get relevant pool for the track
-        pools = option_pools.get(track, option_pools["web"])
-        
-        # Select appropriate category based on question content
-        category = "concepts"
-        for cat_name, items in pools.items():
-            if any(item.lower() in question.lower() for item in items):
-                category = cat_name
-                break
-        
-        selected_options = random.sample(pools[category], min(4, len(pools[category])))
-        random.shuffle(selected_options)
-        
-        return selected_options
-    
-    def _generate_template_question(self, track: str, level: int, topic: str) -> Dict:
-        """Fallback template-based question generation"""
-        difficulty_names = {1: "beginner", 2: "intermediate", 3: "advanced"}
-        
-        templates = {
-            1: f"What is a fundamental concept in {topic or track}?",
-            2: f"How would you implement {topic or track} in a production environment?",
-            3: f"What are the scalability considerations for {topic or track}?"
-        }
-        
-        question_text = templates.get(level, f"What do you know about {topic or track}?")
-        options = self._generate_smart_options(track, level, topic or track, question_text)
-        
-        return {
-            'text': question_text,
-            'options': options,
-            'correct_answer': options[0],
-            'explanation': f"This tests {difficulty_names[level]} knowledge of {topic or track}.",
-            'generated': True,
-            'template_generated': True,
-            'topic': topic or track,
-            'level': level
-        }
-
-
-if 'ai_generator' not in st.session_state:
-    st.session_state.ai_generator = AIQuestionGenerator()
-                    
-def student_dashboard():
-    """Student dashboard interface"""
-    st.title(f"Welcome, {st.session_state.user.username}! 🎓")
-    
-    # Sidebar navigation
-    st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox(
-        "Choose a page",
-        ["Take Assessment", "My Progress", "Practice Questions", "Profile"]
-    )
-    
-    if page == "Take Assessment":
-        take_assessment_page()
-    elif page == "My Progress":
-        progress_page()
-    elif page == "Practice Questions":
-        practice_page()
-    elif page == "Profile":
-        profile_page()
-
-def take_assessment_page():
-    """Main assessment taking interface"""
-    st.header("📝 Take Assessment")
+# Sidebar configuration
+def render_sidebar():
+    """Render the sidebar with configuration options"""
+    st.sidebar.title("⚙️ Assessment Settings")
     
     # Track selection
-    available_tracks = ["web", "ai", "cyber", "data", "mobile", "devops"]
+    available_tracks = _question_manager.generator.get_available_tracks()
+    track_descriptions = {
+        "web": "🌐 Web Development",
+        "ai": "🤖 Artificial Intelligence",
+        "cyber": "🔐 Cybersecurity",
+        "data": "📊 Data Science",
+        "mobile": "📱 Mobile Development",
+        "devops": "☁️ DevOps & Cloud"
+    }
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        selected_track = st.selectbox(
-            "Select Technology Track",
-            available_tracks,
-            format_func=lambda x: {
-                "web": "🌐 Web Development",
-                "ai": "🤖 Artificial Intelligence",
-                "cyber": "🔒 Cybersecurity",
-                "data": "📊 Data Science",
-                "mobile": "📱 Mobile Development",
-                "devops": "⚙️ DevOps"
-            }.get(x, x.title())
-        )
-    
-    with col2:
-        question_source = st.selectbox(
-            "Question Source",
-            ["Pool Questions", "AI Generated", "Mixed"]
-        )
-    
-    # Assessment configuration
-    st.subheader("Assessment Settings")
-    col3, col4 = st.columns(2)
-    
-    with col3:
-        max_questions = st.slider("Maximum Questions", 5, 20, 10)
-        difficulty_mode = st.selectbox(
-            "Difficulty Mode",
-            ["Adaptive", "Fixed Easy", "Fixed Medium", "Fixed Hard"]
-        )
-    
-    with col4:
-        time_limit = st.selectbox("Time Limit (minutes)", [None, 15, 30, 45, 60])
-        show_explanations = st.checkbox("Show explanations after each question", True)
-    
-    if st.button("🚀 Start Assessment", type="primary"):
-        start_assessment(selected_track, question_source, max_questions, difficulty_mode, time_limit, show_explanations)
-
-def start_assessment(track, question_source, max_questions, difficulty_mode, time_limit, show_explanations):
-    """Initialize and run assessment"""
-    
-    # Initialize assessment components
-    env = AdaptiveAssessmentEnv(track=track)
-    env.max_questions = max_questions
-    
-    agent = RLAssessmentAgent(env)
-    
-    # Create session
-    session_id = f"session_{int(time.time())}"
-    session = AssessmentSession(
-        session_id=session_id,
-        username=st.session_state.user.username,
-        track=track,
-        started_at=datetime.now(),
-        performance_data={}
+    selected_track = st.sidebar.selectbox(
+        "chosse track :",
+        options=available_tracks,
+        format_func=lambda x: track_descriptions.get(x, x.title()),
+        key="track_selector"
     )
     
-    # Store in session state
-    st.session_state.assessment_env = env
-    st.session_state.assessment_agent = agent
-    st.session_state.current_session = session
-    st.session_state.question_source = question_source
-    st.session_state.show_explanations = show_explanations
-    st.session_state.assessment_started = True
-    st.session_state.current_question = None
-    st.session_state.question_count = 0
+    # Agent configuration
+    st.sidebar.subheader("🤖 Agent Settings")
     
-    if time_limit:
-        st.session_state.end_time = datetime.now() + timedelta(minutes=time_limit)
+    agent_type = st.sidebar.selectbox(
+        "kind of agent :",
+        options=["main", "conservative", "aggressive", "ensemble"],
+        format_func=lambda x: {
+            "main": "🎯 main",
+            "conservative": "🛡️ conservative", 
+            "aggressive": "⚡ aggressive",
+            "ensemble": "🎭 ensemble"
+        }.get(x, x)
+    )
     
-    st.rerun()
+    adaptation_strategy = st.sidebar.selectbox(
+        " strategy:",
+        options=["rl_based", "conservative", "aggressive", "ability_based"],
+        format_func=lambda x: {
+            "rl_based": "🧠  rl_based",
+            "conservative": "🐌 conservative",
+            "aggressive": "🚀 aggressive", 
+            "ability_based": "📈 ability_based "
+        }.get(x, x)
+    )
+    
+    # Assessment parameters
+    st.sidebar.subheader("📋 Assessment Parameters")
+    
+    max_questions = st.sidebar.slider(
+        "maximum of questions  :",
+        min_value=5,
+        max_value=20,
+        value=10,
+        help="Maximum number of questions in the assessment"
+    )
+    
+    confidence_threshold = st.sidebar.slider(
+        "Confidence :",
+        min_value=0.5,
+        max_value=0.95,
+        value=0.8,
+        step=0.05,
+        help="Confidence threshold for early termination"
+    )
+    
+    return selected_track, agent_type, adaptation_strategy, max_questions, confidence_threshold
 
-def run_assessment():
-    """Run the active assessment"""
-    env = st.session_state.assessment_env
-    agent = st.session_state.assessment_agent
-    session = st.session_state.current_session
+# Analytics and visualizations
+def render_analytics():
+    """Render analytics dashboard"""
+    if not st.session_state.get("env") or not st.session_state.env.question_history:
+        st.warning("no data")
+        return
     
-    # Check time limit
-    if 'end_time' in st.session_state:
-        remaining_time = st.session_state.end_time - datetime.now()
-        if remaining_time.total_seconds() <= 0:
-            complete_assessment()
-            return
-        
-        # Show countdown
-        minutes, seconds = divmod(int(remaining_time.total_seconds()), 60)
-        st.sidebar.metric("Time Remaining", f"{minutes:02d}:{seconds:02d}")
+    env = st.session_state.env
+    agent = st.session_state.agent
     
-    # Show progress
-    progress = st.session_state.question_count / env.max_questions
-    st.progress(progress)
-    st.caption(f"Question {st.session_state.question_count + 1} of {env.max_questions}")
+    st.header("📊 Analytics Dashboard")
     
-    # Get current question
-    if st.session_state.current_question is None:
-        current_question = get_next_question()
-        if current_question is None:
-            complete_assessment()
-            return
-        st.session_state.current_question = current_question
-    
-    question = st.session_state.current_question
-    
-    # Display question
-    st.subheader(f"Question {st.session_state.question_count + 1}")
-    st.write(question['text'])
-    
-    # Show options
-    with st.form("question_form"):
-        selected_answer = st.radio("Choose your answer:", question['options'])
-        submit_answer = st.form_submit_button("Submit Answer")
-        
-        if submit_answer:
-            process_answer(question, selected_answer)
-
-def get_next_question():
-    """Get the next question based on source preference"""
-    env = st.session_state.assessment_env
-    agent = st.session_state.assessment_agent
-    source = st.session_state.question_source
-    
-    if source == "AI Generated":
-        # Generate question with AI
-        topic = f"{env.track} development"
-        ai_question = st.session_state.ai_generator.generate_question_with_ai(
-            env.track, 
-            env.current_level,
-            topic
-        )
-        return ai_question
-    
-    elif source == "Pool Questions":
-        # Get from existing pool
-        return env.get_question()
-    
-    else:  # Mixed
-        # Randomly choose between pool and AI
-        if random.choice([True, False]):
-            ai_question = st.session_state.ai_generator.generate_question_with_ai(
-                env.track, 
-                env.current_level
-            )
-            return ai_question
-        else:
-            return env.get_question()
-
-def process_answer(question, selected_answer):
-    """Process the submitted answer"""
-    env = st.session_state.assessment_env
-    agent = st.session_state.assessment_agent
-    
-    # Get current state before answering
-    current_state = agent.get_state()
-    
-    # Submit answer and get reward
-    reward, is_done = env.submit_answer(question, selected_answer)
-    
-    # Get new state after answering
-    new_state = agent.get_state()
-    
-    # Let agent choose next action for difficulty adjustment
-    action = agent.choose_action(new_state)
-    
-    # Update Q-table
-    agent.update_q_table(current_state, action, reward, new_state)
-    
-    # Adjust difficulty based on agent's decision
-    agent.adjust_difficulty(action)
-    
-    # Show immediate feedback
-    is_correct = question['correct_answer'] == selected_answer
-    
-    if is_correct:
-        st.success("✅ Correct!")
-    else:
-        st.error(f"❌ Incorrect. The correct answer was: {question['correct_answer']}")
-    
-    if st.session_state.show_explanations and 'explanation' in question:
-        st.info(f"💡 **Explanation:** {question['explanation']}")
-    
-    # Update question count
-    st.session_state.question_count += 1
-    st.session_state.current_question = None
-    
-    # Show level adjustment if any
-    if 'level_changes' in env.__dict__ and env.level_changes:
-        last_change = env.level_changes[-1]
-        if last_change['question_number'] == env.total_questions_asked:
-            level_names = {1: "Easy", 2: "Medium", 3: "Hard"}
-            st.info(f"🎯 Difficulty adjusted to: {level_names[last_change['to_level']]}")
-
-    st.session_state["answer_processed"] = True
-
-    # Update question count
-    st.session_state.question_count += 1
-    st.session_state.current_question = None
-    
-    # Show level adjustment if any
-    if 'level_changes' in env.__dict__ and env.level_changes:
-        last_change = env.level_changes[-1]
-        if last_change['question_number'] == env.total_questions_asked:
-            level_names = {1: "Easy", 2: "Medium", 3: "Hard"}
-            st.info(f"🎯 Difficulty adjusted to: {level_names[last_change['to_level']]}")
-    
-    # Check if assessment should end
-    if env.total_questions_asked >= env.max_questions or env._check_completion():
-        st.button("Continue", on_click=complete_assessment)
-    else:
-        st.button("Next Question", on_click=lambda: st.rerun())
-
-def complete_assessment():
-    """Complete the assessment and show results"""
-    env = st.session_state.assessment_env
-    session = st.session_state.current_session
-    
-    # Finalize session
-    session.completed_at = datetime.now()
-    session.final_score = env.get_assessment_summary()['final_score']
-    session.questions_answered = env.total_questions_asked
-    session.ability_level = env.student_ability
-    session.performance_data = env.get_assessment_summary()
-    
-    # Save session to database
-    st.session_state.database.save_session(session)
-    
-    # Clear assessment state
-    st.session_state.assessment_started = False
-    
-    # Show results
-    show_assessment_results(session)
-
-def show_assessment_results(session: AssessmentSession):
-    """Display assessment results"""
-    st.title("🎉 Assessment Complete!")
-    
-    perf_data = session.performance_data
-    
-    # Overall metrics
+    # Performance metrics
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Final Score", f"{perf_data['final_score']:.1%}")
+        total_questions = len(env.question_history)
+        st.metric(" total questions", total_questions)
     
     with col2:
-        st.metric("Questions Answered", perf_data['total_questions'])
+        correct_answers = sum(1 for q in env.question_history if q['is_correct'])
+        accuracy = correct_answers / total_questions if total_questions > 0 else 0
+        st.metric("accuracy", f"{accuracy:.1%}")
     
     with col3:
-        st.metric("Ability Level", f"{session.ability_level:.1%}")
+        st.metric("ability ", f"{env.student_ability:.1%}")
     
     with col4:
-        recommended_level = perf_data.get('recommended_level', 2)
-        level_names = {1: "Beginner", 2: "Intermediate", 3: "Advanced"}
-        st.metric("Recommended Level", level_names[recommended_level])
+        st.metric("confident score ", f"{env.confidence_score:.1%}")
     
-    # Performance by level chart
-    if 'level_performance' in perf_data:
-        st.subheader("📊 Performance by Difficulty Level")
+    # Progress visualization
+    if len(env.performance_history) > 1:
+        fig = make_subplots(
+            rows=2, cols=2,
+            subplot_titles=("Ability Progression", "Performance by Level", 
+                          "Confidence Over Time", "Question Difficulty"),
+            specs=[[{"secondary_y": False}, {"secondary_y": False}],
+                   [{"secondary_y": False}, {"type": "domain"}]]
+        )
         
-        level_data = []
-        for level, data in perf_data['level_performance'].items():
-            level_data.append({
-                'Level': f"Level {level}",
-                'Questions': data['questions'],
-                'Correct': data['correct'],
-                'Accuracy': data['accuracy']
-            })
+        # Ability progression
+        questions = [p['question_number'] for p in env.performance_history]
+        abilities = [p['ability'] for p in env.performance_history]
         
-        if level_data:
-            df = pd.DataFrame(level_data)
-            fig = px.bar(df, x='Level', y=['Questions', 'Correct'], 
-                        title="Questions vs Correct Answers by Level")
-            st.plotly_chart(fig)
-    
-    # Ability progression
-    if 'ability_progression' in perf_data:
-        st.subheader("📈 Ability Progression")
+        fig.add_trace(
+            go.Scatter(x=questions, y=abilities, mode='lines+markers',
+                      name='Student Ability', line=dict(color='blue')),
+            row=1, col=1
+        )
         
-        progression = perf_data['ability_progression']
-        if len(progression) > 1:
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=list(range(1, len(progression) + 1)),
-                y=progression,
-                mode='lines+markers',
-                name='Ability Level'
-            ))
-            fig.update_layout(
-                title="Ability Level Throughout Assessment",
-                xaxis_title="Question Number",
-                yaxis_title="Ability Level",
-                yaxis=dict(range=[0, 1])
-            )
-            st.plotly_chart(fig)
-    
-    # Recommendations
-    st.subheader("💡 Recommendations")
-    
-    final_score = perf_data['final_score']
-    if final_score >= 0.8:
-        st.success("🌟 Excellent performance! You're ready for advanced topics.")
-    elif final_score >= 0.6:
-        st.info("👍 Good job! Consider reviewing intermediate concepts.")
-    else:
-        st.warning("📚 Keep practicing! Focus on fundamental concepts first.")
-    
-    if st.button("Take Another Assessment"):
-        st.rerun()
-
-def progress_page():
-    """Show user progress and history"""
-    st.header("📈 My Progress")
-    
-    sessions = st.session_state.database.get_user_sessions(st.session_state.user.username)
-    
-    if not sessions:
-        st.info("No assessments taken yet. Start your first assessment!")
-        return
-    
-    # Overall statistics
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        total_assessments = len(sessions)
-        st.metric("Total Assessments", total_assessments)
-    
-    with col2:
-        completed_sessions = [s for s in sessions if s.completed_at]
-        avg_score = np.mean([s.final_score for s in completed_sessions]) if completed_sessions else 0
-        st.metric("Average Score", f"{avg_score:.1%}")
-    
-    with col3:
-        total_questions = sum(s.questions_answered for s in sessions)
-        st.metric("Total Questions Answered", total_questions)
-    
-    # Progress over time
-    if completed_sessions:
-        st.subheader("Score Progression")
+        # Performance by level
+        level_data = {}
+        for q in env.question_history:
+            level = q['level']
+            if level not in level_data:
+                level_data[level] = {'correct': 0, 'total': 0}
+            level_data[level]['total'] += 1
+            if q['is_correct']:
+                level_data[level]['correct'] += 1
         
-        df = pd.DataFrame([
-            {
-                'Date': s.completed_at.strftime('%Y-%m-%d'),
-                'Score': s.final_score,
-                'Track': s.track.title(),
-                'Questions': s.questions_answered
-            }
-            for s in completed_sessions
-        ])
+        levels = list(level_data.keys())
+        accuracies = [level_data[l]['correct'] / level_data[l]['total'] for l in levels]
         
-        fig = px.line(df, x='Date', y='Score', color='Track',
-                     title="Assessment Scores Over Time",
-                     markers=True)
-        fig.update_layout(yaxis=dict(range=[0, 1]))
-        st.plotly_chart(fig)
-    
-    # Recent assessments table
-    st.subheader("Recent Assessments")
-    
-    recent_sessions = sorted(sessions, key=lambda x: x.started_at, reverse=True)[:10]
-    
-    table_data = []
-    for session in recent_sessions:
-        status = "Completed" if session.completed_at else "In Progress"
-        score = f"{session.final_score:.1%}" if session.completed_at else "N/A"
+        fig.add_trace(
+            go.Bar(x=[f"Level {l}" for l in levels], y=accuracies,
+                   name='Accuracy by Level', marker_color='green'),
+            row=1, col=2
+        )
         
-        table_data.append({
-            'Date': session.started_at.strftime('%Y-%m-%d %H:%M'),
-            'Track': session.track.title(),
-            'Status': status,
-            'Score': score,
-            'Questions': session.questions_answered
-        })
+        # Confidence over time
+        confidences = [p['confidence'] for p in env.performance_history]
+        
+        fig.add_trace(
+            go.Scatter(x=questions, y=confidences, mode='lines+markers',
+                      name='Confidence', line=dict(color='orange')),
+            row=2, col=1
+        )
+        
+        # Question difficulty distribution
+        difficulty_counts = [0, 0, 0]  # Easy, Medium, Hard
+        for q in env.question_history:
+            difficulty_counts[q['level'] - 1] += 1
+        
+        fig.add_trace(
+            go.Pie(labels=['Easy', 'Medium', 'Hard'], values=difficulty_counts,
+                   name='Question Distribution'),
+            row=2, col=2
+        )
+        
+        fig.update_layout(height=600, showlegend=True)
+        st.plotly_chart(fig, use_container_width=True)
     
-    st.dataframe(pd.DataFrame(table_data))
-
-def practice_page():
-    """Practice questions page"""
-    st.header("🏋️ Practice Questions")
+    # Agent performance
+    st.subheader("🤖 Agent Performance")
+    agent_metrics = agent.get_performance_metrics()
     
     col1, col2 = st.columns(2)
     
     with col1:
-        practice_track = st.selectbox(
-            "Select Track for Practice",
-            ["web", "ai", "cyber", "data", "mobile", "devops"],
-            format_func=lambda x: {
-                "web": "🌐 Web Development",
-                "ai": "🤖 Artificial Intelligence", 
-                "cyber": "🔒 Cybersecurity",
-                "data": "📊 Data Science",
-                "mobile": "📱 Mobile Development",
-                "devops": "⚙️ DevOps"
-            }.get(x, x.title())
-        )
+        st.json(agent_metrics)
     
     with col2:
-        practice_level = st.selectbox(
-            "Difficulty Level",
-            [1, 2, 3],
-            format_func=lambda x: {1: "🟢 Easy", 2: "🟡 Medium", 3: "🔴 Hard"}[x]
-        )
+        # Q-table visualization
+        q_summary = agent.get_q_table_summary()
+        if q_summary:
+            q_df = pd.DataFrame(q_summary).T
+            st.subheader("Q-Table Values")
+            st.dataframe(q_df)
     
-    # Practice mode selection
-    practice_mode = st.selectbox(
-        "Practice Mode",
-        ["Single Question", "Quick Quiz (5 questions)", "Extended Practice (10 questions)"]
+    # Detailed question history
+    st.subheader("📝 Question History")
+    
+    history_data = []
+    for i, q in enumerate(env.question_history, 1):
+        history_data.append({
+            'Question #': i,
+            'Level': q['level'],
+            'Question': q['question']['text'][:50] + "...",
+            'Your Answer': q['answer'],
+            'Correct Answer': q['question']['correct_answer'],
+            'Result': "✅" if q['is_correct'] else "❌",
+            'Ability After': f"{q['student_ability_after']:.2%}"
+        })
+    
+    if history_data:
+        df = pd.DataFrame(history_data)
+        st.dataframe(df, use_container_width=True)
+
+# Question rendering
+def render_question():
+    """Render the current question"""
+    if not st.session_state.current_question:
+        st.error("error")
+        return
+    
+    q = st.session_state.current_question
+    env = st.session_state.env
+    
+    # Question header
+    col1, col2, col3 = st.columns([2, 1, 1])
+    
+    with col1:
+        st.markdown(f"###  question number {env.total_questions_asked}")
+    
+    with col2:
+        level_emoji = {1: "🟢", 2: "🟡", 3: "🔴"}
+        level_name = {1: "easy", 2: "medium", 3: "hard"}
+        st.markdown(f"**levels:** {level_emoji.get(env.current_level, '⚪')} {level_name.get(env.current_level, ' uncertained')}")
+    
+    with col3:
+        st.markdown(f"**ability:** {env.student_ability:.1%}")
+    
+    # Question content
+    st.markdown(f"""
+    <div class="question-card">
+        <h4>{q['text']}</h4>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Answer options
+    if "selected_answer" not in st.session_state:
+        st.session_state.selected_answer = None
+    
+    st.session_state.selected_answer = st.radio(
+        " choesse answer :",
+        q["options"],
+        key=f"question_{env.total_questions_asked}",
+        index=None
     )
     
-    use_ai = st.checkbox("Generate new questions with AI", value=True)
+    # Action buttons
+    col1, col2, col3 = st.columns([1, 1, 2])
     
-    if st.button("🎯 Start Practice"):
-        start_practice_session(practice_track, practice_level, practice_mode, use_ai)
+    with col1:
+        confirm_disabled = (st.session_state.selected_answer is None or 
+                          st.session_state.answer_confirmed)
+        
+        if st.button("✅ confirm ", disabled=confirm_disabled):
+            st.session_state.answer_confirmed = True
+            st.rerun()
+    
+    with col2:
+        if st.session_state.answer_confirmed:
+            if st.button("➡️  next question"):
+                process_answer()
+    
+    with col3:
+        if st.session_state.answer_confirmed:
+            # Show correct answer
+            is_correct = q['correct_answer'] == st.session_state.selected_answer
+            if is_correct:
+                st.success("🎉 correct !")
+            else:
+                st.error(f"❌ wrong ,the correct is  : {q['correct_answer']}")
+            
+            # Show explanation if available
+            if 'explanation' in q:
+                st.info(f"💡 {q['explanation']}")
 
-def start_practice_session(track, level, mode, use_ai):
-    """Start a practice session"""
-    question_counts = {
-        "Single Question": 1,
-        "Quick Quiz (5 questions)": 5,
-        "Extended Practice (10 questions)": 10
-    }
+def process_answer():
+    """Process the student's answer and update the system"""
+    env = st.session_state.env
+    agent = st.session_state.agent
+    q = st.session_state.current_question
+    answer = st.session_state.selected_answer
     
-    num_questions = question_counts[mode]
+    # Get current state
+    current_state = agent.get_state()
     
-    # Initialize practice session
-    st.session_state.practice_active = True
-    st.session_state.practice_track = track
-    st.session_state.practice_level = level
-    st.session_state.practice_use_ai = use_ai
-    st.session_state.practice_questions = []
-    st.session_state.practice_answers = []
-    st.session_state.practice_current_q = 0
-    st.session_state.practice_total = num_questions
+    # Submit answer to environment
+    reward, done = env.submit_answer(q, answer)
+    
+    # Get next state
+    next_state = agent.get_state()
+    
+    # Choose action based on strategy
+    if st.session_state.adaptation_strategy == "rl_based":
+        action = agent.choose_action(next_state)
+    elif st.session_state.adaptation_strategy == "conservative":
+        action = AdaptiveStrategy.conservative_strategy(next_state)
+    elif st.session_state.adaptation_strategy == "aggressive":
+        action = AdaptiveStrategy.aggressive_strategy(next_state)
+    elif st.session_state.adaptation_strategy == "ability_based":
+        action = AdaptiveStrategy.ability_based_strategy(next_state)
+    else:
+        action = "auto"
+    
+    # Update Q-table if using RL agent
+    if st.session_state.adaptation_strategy == "rl_based":
+        agent.update_q_table(current_state, action, reward, next_state)
+    
+    # Adjust difficulty
+    agent.adjust_difficulty(action)
+    
+    # Reset for next question
+    st.session_state.answer_confirmed = False
+    st.session_state.selected_answer = None
+    
+    if done:
+        st.session_state.assessment_complete = True
+        st.session_state.show_results = True
+    else:
+        # Get next question
+        next_question = env.get_question()
+        if next_question:
+            st.session_state.current_question = next_question
+        else:
+            st.session_state.assessment_complete = True
+            st.session_state.show_results = True
     
     st.rerun()
 
-def run_practice_session():
-    """Run the practice session"""
-    if st.session_state.practice_current_q >= st.session_state.practice_total:
-        show_practice_results()
-        return
+def render_results():
+    """Render the final results and summary"""
+    env = st.session_state.env
+    agent = st.session_state.agent
     
-    # Progress indicator
-    progress = st.session_state.practice_current_q / st.session_state.practice_total
-    st.progress(progress)
-    st.caption(f"Question {st.session_state.practice_current_q + 1} of {st.session_state.practice_total}")
-    
-    # Get or generate question
-    if len(st.session_state.practice_questions) <= st.session_state.practice_current_q:
-        if st.session_state.practice_use_ai:
-            question = st.session_state.ai_generator.generate_question_with_ai(
-                st.session_state.practice_track,
-                st.session_state.practice_level
-            )
-        else:
-            question = get_adaptive_question(
-                st.session_state.practice_track,
-                st.session_state.practice_level,
-                [q['text'] for q in st.session_state.practice_questions]
-            )
-        
-        if question:
-            st.session_state.practice_questions.append(question)
-        else:
-            st.error("No more questions available for this combination.")
-            return
-    
-    current_question = st.session_state.practice_questions[st.session_state.practice_current_q]
-    
-    # Display question
-    st.subheader(f"Question {st.session_state.practice_current_q + 1}")
-    st.write(current_question['text'])
-    
-    # Answer form
-    with st.form(f"practice_form_{st.session_state.practice_current_q}"):
-        selected_answer = st.radio("Select your answer:", current_question['options'])
-        submit_button = st.form_submit_button("Submit Answer")
-
-        if submit_button:
-            # Record answer
-            is_correct = current_question['correct_answer'] == selected_answer
-            st.session_state.practice_answers.append({
-                'question': current_question,
-                'selected': selected_answer,
-                'correct': is_correct
-            })
-
-            # Show feedback
-            if is_correct:
-                st.success("✅ Correct!")
-            else:
-                st.error(f"❌ Incorrect. The correct answer was: {current_question['correct_answer']}")
-
-            if 'explanation' in current_question:
-                st.info(f"💡 **Explanation:** {current_question['explanation']}")
-
-            # Move to next question index
-            st.session_state.practice_current_q += 1
-
-            st.session_state.answer_submitted = True
-
-
-    # Navigation buttons (outside the form)
-    if st.session_state.get("answer_submitted", False):
-        if st.session_state.practice_current_q < st.session_state.practice_total:
-            st.button("Next Question", on_click=lambda: st.rerun())
-        else:
-            st.button("Show Results", on_click=lambda: st.rerun())
-
-        # Reset the flag after showing buttons
-        st.session_state.answer_submitted = False
-
-def show_practice_results():
-    """Show practice session results"""
-    st.title("🎉 Practice Session Complete!")
-    
-    answers = st.session_state.practice_answers
-    correct_count = sum(1 for a in answers if a['correct'])
-    total_count = len(answers)
-    score = correct_count / total_count if total_count > 0 else 0
-    
-    # Results summary
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric("Score", f"{score:.1%}")
-    with col2:
-        st.metric("Correct Answers", f"{correct_count}/{total_count}")
-    with col3:
-        level_name = {1: "Easy", 2: "Medium", 3: "Hard"}[st.session_state.practice_level]
-        st.metric("Level", level_name)
-    
-    # Detailed results
-    st.subheader("📝 Detailed Results")
-    
-    for i, answer in enumerate(answers, 1):
-        with st.expander(f"Question {i} - {'✅ Correct' if answer['correct'] else '❌ Incorrect'}"):
-            st.write(f"**Question:** {answer['question']['text']}")
-            st.write(f"**Your Answer:** {answer['selected']}")
-            st.write(f"**Correct Answer:** {answer['question']['correct_answer']}")
-            if 'explanation' in answer['question']:
-                st.write(f"**Explanation:** {answer['question']['explanation']}")
-    
-    # Reset practice session
-    if st.button("Practice More"):
-        st.session_state.practice_active = False
-        st.rerun()
-
-def profile_page():
-    """User profile page"""
-    st.header("👤 My Profile")
-    
-    user = st.session_state.user
-    
-    # Basic info
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.text_input("Username", user.username, disabled=True)
-        st.text_input("Email", user.email, disabled=True)
-    
-    with col2:
-        st.text_input("Role", user.role.title(), disabled=True)
-        st.text_input("Member Since", user.created_at.strftime('%Y-%m-%d'), disabled=True)
-    
-    # Learning preferences
-    st.subheader("🎯 Learning Preferences")
-    
-    with st.form("preferences_form"):
-        preferred_tracks = st.multiselect(
-            "Preferred Technology Tracks",
-            ["web", "ai", "cyber", "data", "mobile", "devops"],
-            default=user.profile_data.get('preferred_tracks', [])
-        )
-        
-        difficulty_preference = st.selectbox(
-            "Preferred Starting Difficulty",
-            ["Easy", "Medium", "Hard"],
-            index=["Easy", "Medium", "Hard"].index(user.profile_data.get('difficulty_preference', 'Medium'))
-        )
-        
-        question_explanation = st.checkbox(
-            "Always show explanations",
-            value=user.profile_data.get('show_explanations', True)
-        )
-        
-        if st.form_submit_button("Save Preferences"):
-            # Update user preferences
-            if not user.profile_data:
-                user.profile_data = {}
-            
-            user.profile_data.update({
-                'preferred_tracks': preferred_tracks,
-                'difficulty_preference': difficulty_preference,
-                'show_explanations': question_explanation
-            })
-            
-            st.success("Preferences saved!")
-
-def student_overview_page():
-    """Overview of all students"""
-    st.header("📊 Student Overview")
-    
-    # Get all students
-    all_users = st.session_state.database.get_all_users()
-    students = [user for user in all_users if user.role == 'student']
-    
-    if not students:
-        st.info("No students registered yet.")
-        return
-    
-    # Student statistics
-    st.subheader("Student Statistics")
-    
-    student_data = []
-    for student in students:
-        sessions = st.session_state.database.get_user_sessions(student.username)
-        completed_sessions = [s for s in sessions if s.completed_at]
-        
-        avg_score = np.mean([s.final_score for s in completed_sessions]) if completed_sessions else 0
-        total_questions = sum(s.questions_answered for s in sessions)
-        
-        student_data.append({
-            'Username': student.username,
-            'Email': student.email,
-            'Assessments': len(sessions),
-            'Completed': len(completed_sessions),
-            'Avg Score': f"{avg_score:.1%}",
-            'Total Questions': total_questions,
-            'Last Active': max([s.started_at for s in sessions], default=student.created_at).strftime('%Y-%m-%d')
-        })
-    
-    df = pd.DataFrame(student_data)
-    st.dataframe(df, use_container_width=True)
-    
-    # Performance distribution
-    if completed_sessions:
-        st.subheader("Performance Distribution")
-        
-        scores = [s.final_score for student in students 
-                 for s in st.session_state.database.get_user_sessions(student.username)
-                 if s.completed_at]
-        
-        fig = px.histogram(x=scores, nbins=10, title="Score Distribution Across All Students")
-        fig.update_xaxis(title="Score")
-        fig.update_yaxis(title="Number of Assessments")
-        st.plotly_chart(fig)
-
-def assessment_management_page():
-    """Manage assessments"""
-    st.header("📝 Assessment Management")
-    
-    tab1, tab2 = st.tabs(["Recent Assessments", "Create Custom Assessment"])
-    
-    with tab1:
-        st.subheader("Recent Assessment Sessions")
-        
-        all_sessions = st.session_state.database.get_all_sessions()
-        recent_sessions = sorted(all_sessions, key=lambda x: x.started_at, reverse=True)[:20]
-        
-        if not recent_sessions:
-            st.info("No assessment sessions yet.")
-        else:
-            session_data = []
-            for session in recent_sessions:
-                status = "Completed" if session.completed_at else "In Progress"
-                duration = ""
-                if session.completed_at:
-                    duration = str(session.completed_at - session.started_at).split('.')[0]
-                
-                session_data.append({
-                    'Student': session.username,
-                    'Track': session.track.title(),
-                    'Started': session.started_at.strftime('%Y-%m-%d %H:%M'),
-                    'Status': status,
-                    'Score': f"{session.final_score:.1%}" if session.completed_at else "N/A",
-                    'Questions': session.questions_answered,
-                    'Duration': duration
-                })
-            
-            st.dataframe(pd.DataFrame(session_data), use_container_width=True)
-    
-    with tab2:
-        st.subheader("Create Custom Assessment")
-        st.info("Feature coming soon: Create custom assessments with specific question sets.")
-
-
-def admin_dashboard():
-    """Admin dashboard interface"""
-    st.title(f"Admin Dashboard - {st.session_state.user.username} 🛠️")
-    
-    st.sidebar.title("Admin Navigation")
-    page = st.sidebar.selectbox(
-        "Choose a page",
-        ["System Overview", "User Management", "Data Management", "System Settings"]
-    )
-    
-    if page == "System Overview":
-        system_overview_page()
-    elif page == "User Management":
-        user_management_page()
-    elif page == "Data Management":
-        data_management_page()
-    elif page == "System Settings":
-        system_settings_page()
-
-def system_overview_page():
-    """System overview for admins"""
-    st.header("🖥️ System Overview")
-    
-    # System statistics
-    all_users = st.session_state.database.get_all_users()
-    all_sessions = st.session_state.database.get_all_sessions()
-    
-    col1, col2, col3  = st.columns(4)
-    
-    with col1:
-        st.metric("Total Users", len(all_users))
-    with col2:
-        students = [u for u in all_users if u.role == 'student']
-        st.metric("Students", len(students))
-    with col3:
-        st.metric("Total Sessions", len(all_sessions))
-    
-    # Recent activity
-    st.subheader("Recent System Activity")
-    
-    recent_users = sorted(all_users, key=lambda x: x.created_at, reverse=True)[:5]
-    recent_sessions = sorted(all_sessions, key=lambda x: x.started_at, reverse=True)[:5]
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.write("**Recent Registrations:**")
-        for user in recent_users:
-            st.write(f"• {user.username} ({user.role}) - {user.created_at.strftime('%Y-%m-%d')}")
-    
-    with col2:
-        st.write("**Recent Assessments:**")
-        for session in recent_sessions:
-            status = "✅" if session.completed_at else "⏳"
-            st.write(f"• {status} {session.username} - {session.track} - {session.started_at.strftime('%Y-%m-%d %H:%M')}")
-
-def user_management_page():
-    """User management for admins"""
-    st.header("👥 User Management")
-    
-    all_users = st.session_state.database.get_all_users()
-    
-    # User table
-    user_data = []
-    for user in all_users:
-        sessions = st.session_state.database.get_user_sessions(user.username)
-        user_data.append({
-            'Username': user.username,
-            'Email': user.email,
-            'Role': user.role.title(),
-            'Created': user.created_at.strftime('%Y-%m-%d'),
-            'Sessions': len(sessions)
-        })
-    
-    df = pd.DataFrame(user_data)
-    st.dataframe(df, use_container_width=True)
-    
-    # User actions
-    st.subheader("User Actions")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.write("**Create New User:**")
-        with st.form("create_user_form"):
-            new_username = st.text_input("Username")
-            new_email = st.text_input("Email")
-            new_password = st.text_input("Password", type="password")
-            new_role = st.selectbox("Role", ["student", "admin"])
-            
-            if st.form_submit_button("Create User"):
-                if st.session_state.database.create_user(new_username, new_password, new_email, new_role):
-                    st.success(f"User {new_username} created successfully!")
-                    st.rerun()
-                else:
-                    st.error("Failed to create user (username may already exist)")
-    
-    with col2:
-        st.write("**User Statistics:**")
-        role_counts = {}
-        for user in all_users:
-            role_counts[user.role] = role_counts.get(user.role, 0) + 1
-        
-        for role, count in role_counts.items():
-            st.metric(f"{role.title()}s", count)
-
-def data_management_page():
-    """Data management for admins"""
-    st.header("💾 Data Management")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("Export Data")
-        
-        if st.button("Export All Users"):
-            all_users = st.session_state.database.get_all_users()
-            user_data = [
-                {
-                    'username': user.username,
-                    'email': user.email,
-                    'role': user.role,
-                    'created_at': user.created_at.isoformat()
-                }
-                for user in all_users
-            ]
-            st.download_button(
-                "Download Users JSON",
-                json.dumps(user_data, indent=2),
-                "users_export.json",
-                "application/json"
-            )
-        
-        if st.button("Export All Sessions"):
-            all_sessions = st.session_state.database.get_all_sessions()
-            session_data = [
-                {
-                    'session_id': session.session_id,
-                    'username': session.username,
-                    'track': session.track,
-                    'started_at': session.started_at.isoformat(),
-                    'completed_at': session.completed_at.isoformat() if session.completed_at else None,
-                    'final_score': session.final_score,
-                    'questions_answered': session.questions_answered,
-                    'ability_level': session.ability_level
-                }
-                for session in all_sessions
-            ]
-            st.download_button(
-                "Download Sessions JSON",
-                json.dumps(session_data, indent=2),
-                "sessions_export.json",
-                "application/json"
-            )
-    
-    with col2:
-        st.subheader("System Maintenance")
-        
-        if st.button("🧹 Clean Old Sessions", help="Remove incomplete sessions older than 7 days"):
-            # In a real implementation, you would clean old data
-            st.success("System cleanup completed! (This is a demo)")
-        
-        if st.button("📊 Refresh Statistics"):
-            st.rerun()
-
-def system_settings_page():
-    """System settings for admins"""
-    st.header("⚙️ System Settings")
-    
-    st.subheader("AI Question Generation Settings")
-    
-    with st.form("ai_settings_form"):
-        enable_ai = st.checkbox("Enable AI Question Generation", value=True)
-        ai_api_endpoint = st.text_input("AI API Endpoint (Optional)")
-        default_questions_per_track = st.number_input("Default Questions per Track", value=50)
-        
-        st.subheader("Assessment Settings")
-        max_assessment_time = st.number_input("Max Assessment Time (minutes)", value=60)
-        default_question_count = st.number_input("Default Question Count", value=10)
-        
-        if st.form_submit_button("Save Settings"):
-            st.success("Settings saved! (This is a demo)")
-
-# Main application flow
-# Main application flow
-def main():
-    """Main application entry point"""
-    
-    # Custom CSS
     st.markdown("""
-    <style>
-    .main-header {
-        text-align: center;
-        color: #2E86AB;
-        padding: 1rem 0;
-        border-bottom: 2px solid #2E86AB;
-        margin-bottom: 2rem;
-    }
-    .metric-container {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #2E86AB;
-    }
-    .success-box {
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        padding: 1rem;
-        border-radius: 0.25rem;
-        color: #155724;
-    }
-    </style>
+    <div class="success-message">
+        <h2 style="margin: 0;">🎉 exam is done sucessfully   !</h2>
+        <p style="margin: 0.5rem 0 0 0;"> your results  :</p>
+    </div>
     """, unsafe_allow_html=True)
     
+    # Get assessment summary
+    summary = env.get_assessment_summary()
+    
+    # Main metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric(
+            "final score ",
+            f"{summary['correct_answers']}/{summary['total_questions']}",
+            f"{summary['final_score']:.1%}"
+        )
+    
+    with col2:
+        st.metric(
+            " ability",
+            f"{summary['final_ability']:.1%}",
+        )
+    
+    with col3:
+        st.metric(
+            "confident ",
+            f"{summary['confidence_score']:.1%}",
+        )
+    
+    with col4:
+        recommended_level = summary['recommended_level']
+        level_names = {1: "beginner", 2: "intermediate", 3: "advanced"}
+        st.metric(
+            "  recommded level",
+            level_names.get(recommended_level, "uncertained ")
+        )
+    
+    # Performance by level
+    st.subheader("📊  Performance by level ")
+    
+    if summary['level_performance']:
+        level_data = []
+        for level, perf in summary['level_performance'].items():
+            level_data.append({
+                'Level': f"Level {level}",
+                ' questions': perf['questions'],
+                ' correct answers': perf['correct'],
+                ' accuracy': f"{perf['accuracy']:.1%}"
+            })
+        
+        df = pd.DataFrame(level_data)
+        st.dataframe(df, use_container_width=True)
+        
+        # Visualization
+        fig = px.bar(
+            df, 
+            x='Level', 
+            y=' accuracy',
+            title=" Performance by level",
+            color=' accuracy',
+            color_continuous_scale='RdYlGn'
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Detailed recommendations
+    st.subheader("💡 recommendations and next step ")
 
-    # Show logout button
-    with st.sidebar:
-        st.write(f"Logged in as: **{st.session_state.user.username}** ({st.session_state.user.role})")
-        if st.button("🚪 Logout"):
-            # Clear all session state
+    
+    # Restart option
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("🔄 Restart exam ", type="primary"):
+            # Reset session state
             for key in list(st.session_state.keys()):
-                if key != 'database' and key != 'ai_generator':  # Keep these for performance
+                if key not in ['track_selector']:  # Keep track selection
                     del st.session_state[key]
             st.rerun()
     
-    # Check for active assessment
-    if st.session_state.get('assessment_started', False):
-        st.title("📝 Assessment in Progress")
-        run_assessment()
+    with col2:
+        if st.button("📊 show analytics  "):
+            st.session_state.show_analytics = True
+            st.rerun()
+
+def main():
+    """Main application function"""
+    initialize_session_state()
+    # Header
+    st.markdown("""
+    <div class="main-header">
+        <h1> smart adaptive learning system </h1>
+        <p>evaluate your technical skills </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Sidebar
+    selected_track, agent_type, adaptation_strategy, max_questions, confidence_threshold = render_sidebar()
+    
+    # Update session state with sidebar values
+    st.session_state.agent_type = agent_type
+    st.session_state.adaptation_strategy = adaptation_strategy
+    
+    # Navigation
+    if st.session_state.show_analytics:
+        if st.button("back to test"):
+            st.session_state.show_analytics = False
+            st.rerun()
+        render_analytics()
         return
     
-    # Check for active practice session
-    if st.session_state.get('practice_active', False):
-        st.title("🏋️ Practice Session")
-        run_practice_session()
-        return
+    # Main content based on state
+    if not st.session_state.initialized:
+        # Welcome screen
+        st.header("🚀 start your carrer  ")
+        
+        # Track statistics
+        track_stats = get_question_statistics(selected_track)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader(f"📊 statisc {selected_track.upper()}")
+            st.write(f"** total questions:** {track_stats['total_questions']}")
+            
+            for level, info in track_stats['levels'].items():
+                st.write(f"**{info['difficulty']}:** {info['count']} question")
+        
+        with col2:
+            st.subheader("ℹ️ test info")
+            st.write(f"** max questions:** {max_questions}")
+
+        
+        if st.button("🎯 start test", type="primary", use_container_width=True):
+        # Initialize environment and agent
+            st.session_state.env = AdaptiveAssessmentEnv(
+                track=selected_track
+            )
+
+            st.session_state.agent = RLAssessmentAgent(
+                env=st.session_state.env,
+            )
+            
+            st.session_state.initialized = True
+            st.success("✅ Assessment initialized! Ready to start.")
+            st.session_state.env = AdaptiveAssessmentEnv(track=selected_track)
+            st.session_state.env.max_questions = max_questions
+            st.session_state.env.confidence_threshold = confidence_threshold
+            
+            # Initialize agent based on type
+            if agent_type == "ensemble":
+                st.session_state.agent = RLAssessmentAgent(st.session_state.env)
+            
+            # Get first question
+            first_question = st.session_state.env.get_question()
+            if first_question:
+                st.session_state.current_question = first_question
+                st.session_state.initialized = True
+                st.rerun()
+            else:
+                st.error("❌ error")
     
-    # Route to appropriate dashboard based on user role
-    user_role = st.session_state.user.role
-    student_dashboard()
+    elif st.session_state.show_results:
+        
+        final_results = {
+            'student_id': st.session_state.get('student_id'),
+            'app_type': 'assessment',
+            'score': env.get_final_score(),
+            'ability_level': env.student_ability,
+            'questions_answered': env.total_questions_asked,
+            'time_spent': env.get_time_spent(),
+            'details': env.get_assessment_summary()
+        }
+        
+        render_results()    
+    else:
+        # Main assessment interface
+        if st.session_state.current_question:
+            render_question()
+        else:
+            st.error("❌ error")
+    
+    # Progress indicator
+    if st.session_state.initialized and not st.session_state.show_results:
+        env = st.session_state.env
+        progress = min(env.total_questions_asked / env.max_questions, 1.0)
+        
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("📈 progress")
+        st.sidebar.progress(progress)
+        st.sidebar.write(f"question  {env.total_questions_asked} من {env.max_questions}")
+        
+        # Real-time metrics
+        if env.question_history:
+            correct = sum(1 for q in env.question_history if q['is_correct'])
+            accuracy = correct / len(env.question_history)
+            
+            st.sidebar.metric(" accuracy", f"{accuracy:.1%}")
+            st.sidebar.metric(" student ability", f"{env.student_ability:.1%}")
+            st.sidebar.metric(" confidence score", f"{env.confidence_score:.1%}")
+
