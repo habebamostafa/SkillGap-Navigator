@@ -173,8 +173,8 @@ def init_session_state():
     if 'current_app' not in st.session_state:
         st.session_state.current_app = None
     
-    if 'assessment_completed' not in st.session_state:
-        st.session_state.assessment_completed = False
+    # if 'assessment_completed' not in st.session_state:
+    #     st.session_state.assessment_completed = False
 
 def login_page():
     """Login and registration page"""
