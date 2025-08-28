@@ -6,19 +6,17 @@ import json
 import hashlib
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import plotly.express as px
 import plotly.graph_objects as go
 from dataclasses import dataclass
 import requests
 import random
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys
+import os
 
-# Enhanced imports from your existing modules
-from core.environment import AdaptiveAssessmentEnv
-from core.agent import RLAssessmentAgent
-from data.questions import get_adaptive_question, generate_interview_questions, _question_manager
+# Add the parent directory to the path to import core modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Configure Streamlit page
 st.set_page_config(
@@ -410,23 +408,43 @@ def check_user_authentication():
                     
 def student_dashboard():
     """Student dashboard interface"""
-    st.title(f"Welcome, {st.session_state.user.username}! 🎓")
-    
-    # Sidebar navigation
-    st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox(
-        "Choose a page",
-        ["Take Assessment", "My Progress", "Practice Questions", "Profile"]
-    )
-    
-    if page == "Take Assessment":
-        take_assessment_page()
-    elif page == "My Progress":
-        progress_page()
-    elif page == "Practice Questions":
-        practice_page()
-    elif page == "Profile":
-        profile_page()
+    try:
+        # Check if user object is valid
+        if not hasattr(st.session_state.user, 'username'):
+            st.error("User authentication error. Please log in again.")
+            if st.button("Return to Login"):
+                if 'user' in st.session_state:
+                    del st.session_state.user
+                st.rerun()
+            return
+            
+        st.title(f"Welcome, {st.session_state.user.username}! 🎓")
+        
+        # Sidebar navigation
+        st.sidebar.title("Navigation")
+        page = st.sidebar.selectbox(
+            "Choose a page",
+            ["Take Assessment", "My Progress", "Practice Questions", "Profile"]
+        )
+        
+        if page == "Take Assessment":
+            take_assessment_page()
+        elif page == "My Progress":
+            progress_page()
+        elif page == "Practice Questions":
+            practice_page()
+        elif page == "Profile":
+            profile_page()
+            
+    except AttributeError as e:
+        if "'dict' object has no attribute 'username'" in str(e):
+            st.error("Authentication error. Please log in again.")
+            if st.button("Return to Login"):
+                if 'user' in st.session_state:
+                    del st.session_state.user
+                st.rerun()
+        else:
+            st.error(f"An error occurred: {e}")
 
 def take_assessment_page():
     """Main assessment taking interface"""
@@ -477,184 +495,216 @@ def take_assessment_page():
 
 def start_assessment(track, question_source, max_questions, difficulty_mode, time_limit, show_explanations):
     """Initialize and run assessment"""
-    
-    # Initialize assessment components
-    env = AdaptiveAssessmentEnv(track=track)
-    env.max_questions = max_questions
-    
-    agent = RLAssessmentAgent(env)
-    
-    # Create session
-    session_id = f"session_{int(time.time())}"
-    session = AssessmentSession(
-        session_id=session_id,
-        username=st.session_state.user.username,
-        track=track,
-        started_at=datetime.now(),
-        performance_data={}
-    )
-    
-    # Store in session state
-    st.session_state.assessment_env = env
-    st.session_state.assessment_agent = agent
-    st.session_state.current_session = session
-    st.session_state.question_source = question_source
-    st.session_state.show_explanations = show_explanations
-    st.session_state.assessment_started = True
-    st.session_state.current_question = None
-    st.session_state.question_count = 0
-    
-    if time_limit:
-        st.session_state.end_time = datetime.now() + timedelta(minutes=time_limit)
-    
-    st.rerun()
+    try:
+        # Import here to avoid circular imports
+        from core.environment import AdaptiveAssessmentEnv
+        from core.agent import RLAssessmentAgent
+        
+        # Initialize assessment components
+        env = AdaptiveAssessmentEnv(track=track)
+        env.max_questions = max_questions
+        
+        agent = RLAssessmentAgent(env)
+        
+        # Create session
+        session_id = f"session_{int(time.time())}"
+        session = AssessmentSession(
+            session_id=session_id,
+            username=st.session_state.user.username,
+            track=track,
+            started_at=datetime.now(),
+            performance_data={}
+        )
+        
+        # Store in session state
+        st.session_state.assessment_env = env
+        st.session_state.assessment_agent = agent
+        st.session_state.current_session = session
+        st.session_state.question_source = question_source
+        st.session_state.show_explanations = show_explanations
+        st.session_state.assessment_started = True
+        st.session_state.current_question = None
+        st.session_state.question_count = 0
+        
+        if time_limit:
+            st.session_state.end_time = datetime.now() + timedelta(minutes=time_limit)
+        
+        st.rerun()
+    except ImportError as e:
+        st.error(f"Could not import required modules: {e}")
+        st.info("Please make sure the core modules are available in the correct path.")
 
 def run_assessment():
     """Run the active assessment"""
-    env = st.session_state.assessment_env
-    agent = st.session_state.assessment_agent
-    session = st.session_state.current_session
-    
-    # Check time limit
-    if 'end_time' in st.session_state:
-        remaining_time = st.session_state.end_time - datetime.now()
-        if remaining_time.total_seconds() <= 0:
-            complete_assessment()
-            return
+    try:
+        env = st.session_state.assessment_env
+        agent = st.session_state.assessment_agent
+        session = st.session_state.current_session
         
-        # Show countdown
-        minutes, seconds = divmod(int(remaining_time.total_seconds()), 60)
-        st.sidebar.metric("Time Remaining", f"{minutes:02d}:{seconds:02d}")
-    
-    # Show progress
-    progress = st.session_state.question_count / env.max_questions
-    st.progress(progress)
-    st.caption(f"Question {st.session_state.question_count + 1} of {env.max_questions}")
-    
-    # Get current question
-    if st.session_state.current_question is None:
-        current_question = get_next_question()
-        if current_question is None:
-            complete_assessment()
-            return
-        st.session_state.current_question = current_question
-    
-    question = st.session_state.current_question
-    
-    # Display question
-    st.subheader(f"Question {st.session_state.question_count + 1}")
-    st.write(question['text'])
-    
-    # Show options
-    with st.form("question_form"):
-        selected_answer = st.radio("Choose your answer:", question['options'])
-        submit_answer = st.form_submit_button("Submit Answer")
+        # Check time limit
+        if 'end_time' in st.session_state:
+            remaining_time = st.session_state.end_time - datetime.now()
+            if remaining_time.total_seconds() <= 0:
+                complete_assessment()
+                return
+            
+            # Show countdown
+            minutes, seconds = divmod(int(remaining_time.total_seconds()), 60)
+            st.sidebar.metric("Time Remaining", f"{minutes:02d}:{seconds:02d}")
         
-        if submit_answer:
-            process_answer(question, selected_answer)
+        # Show progress
+        progress = st.session_state.question_count / env.max_questions
+        st.progress(progress)
+        st.caption(f"Question {st.session_state.question_count + 1} of {env.max_questions}")
+        
+        # Get current question
+        if st.session_state.current_question is None:
+            current_question = get_next_question()
+            if current_question is None:
+                complete_assessment()
+                return
+            st.session_state.current_question = current_question
+        
+        question = st.session_state.current_question
+        
+        # Display question
+        st.subheader(f"Question {st.session_state.question_count + 1}")
+        st.write(question['text'])
+        
+        # Show options
+        with st.form("question_form"):
+            selected_answer = st.radio("Choose your answer:", question['options'])
+            submit_answer = st.form_submit_button("Submit Answer")
+            
+            if submit_answer:
+                process_answer(question, selected_answer)
+    except Exception as e:
+        st.error(f"Error running assessment: {e}")
+        if st.button("Return to Dashboard"):
+            st.session_state.assessment_started = False
+            st.rerun()
 
 def get_next_question():
     """Get the next question based on source preference"""
-    env = st.session_state.assessment_env
-    agent = st.session_state.assessment_agent
-    source = st.session_state.question_source
-    
-    if source == "AI Generated":
-        # Generate question with AI
-        topic = f"{env.track} development"
-        ai_question = st.session_state.ai_generator.generate_question_with_ai(
-            env.track, 
-            env.current_level,
-            topic
-        )
-        return ai_question
-    
-    elif source == "Pool Questions":
-        # Get from existing pool
-        return env.get_question()
-    
-    else:  # Mixed
-        # Randomly choose between pool and AI
-        if random.choice([True, False]):
+    try:
+        env = st.session_state.assessment_env
+        agent = st.session_state.assessment_agent
+        source = st.session_state.question_source
+        
+        if source == "AI Generated":
+            # Generate question with AI
+            topic = f"{env.track} development"
             ai_question = st.session_state.ai_generator.generate_question_with_ai(
                 env.track, 
-                env.current_level
+                env.current_level,
+                topic
             )
             return ai_question
-        else:
+        
+        elif source == "Pool Questions":
+            # Get from existing pool
             return env.get_question()
+        
+        else:  # Mixed
+            # Randomly choose between pool and AI
+            if random.choice([True, False]):
+                ai_question = st.session_state.ai_generator.generate_question_with_ai(
+                    env.track, 
+                    env.current_level
+                )
+                return ai_question
+            else:
+                return env.get_question()
+    except Exception as e:
+        st.error(f"Error getting next question: {e}")
+        # Return a fallback question
+        return {
+            'text': 'What is the default port for HTTP?',
+            'options': ['80', '443', '8080', '21'],
+            'correct_answer': '80',
+            'explanation': 'HTTP uses port 80 by default.',
+            'level': 1
+        }
 
 def process_answer(question, selected_answer):
     """Process the submitted answer"""
-    env = st.session_state.assessment_env
-    agent = st.session_state.assessment_agent
-    
-    # Get current state before answering
-    current_state = agent.get_state()
-    
-    # Submit answer and get reward
-    reward, is_done = env.submit_answer(question, selected_answer)
-    
-    # Get new state after answering
-    new_state = agent.get_state()
-    
-    # Let agent choose next action for difficulty adjustment
-    action = agent.choose_action(new_state)
-    
-    # Update Q-table
-    agent.update_q_table(current_state, action, reward, new_state)
-    
-    # Adjust difficulty based on agent's decision
-    agent.adjust_difficulty(action)
-    
-    # Show immediate feedback
-    is_correct = question['correct_answer'] == selected_answer
-    
-    if is_correct:
-        st.success("✅ Correct!")
-    else:
-        st.error(f"❌ Incorrect. The correct answer was: {question['correct_answer']}")
-    
-    if st.session_state.show_explanations and 'explanation' in question:
-        st.info(f"💡 **Explanation:** {question['explanation']}")
-    
-    # Update question count
-    st.session_state.question_count += 1
-    st.session_state.current_question = None
-    
-    # Show level adjustment if any
-    if 'level_changes' in env.__dict__ and env.level_changes:
-        last_change = env.level_changes[-1]
-        if last_change['question_number'] == env.total_questions_asked:
-            level_names = {1: "Easy", 2: "Medium", 3: "Hard"}
-            st.info(f"🎯 Difficulty adjusted to: {level_names[last_change['to_level']]}")
-    
-    # Check if assessment should end
-    if env.total_questions_asked >= env.max_questions or env._check_completion():
-        st.button("Continue", on_click=complete_assessment)
-    else:
-        st.button("Next Question", on_click=lambda: st.rerun())
+    try:
+        env = st.session_state.assessment_env
+        agent = st.session_state.assessment_agent
+        
+        # Get current state before answering
+        current_state = agent.get_state()
+        
+        # Submit answer and get reward
+        reward, is_done = env.submit_answer(question, selected_answer)
+        
+        # Get new state after answering
+        new_state = agent.get_state()
+        
+        # Let agent choose next action for difficulty adjustment
+        action = agent.choose_action(new_state)
+        
+        # Update Q-table
+        agent.update_q_table(current_state, action, reward, new_state)
+        
+        # Adjust difficulty based on agent's decision
+        agent.adjust_difficulty(action)
+        
+        # Show immediate feedback
+        is_correct = question['correct_answer'] == selected_answer
+        
+        if is_correct:
+            st.success("✅ Correct!")
+        else:
+            st.error(f"❌ Incorrect. The correct answer was: {question['correct_answer']}")
+        
+        if st.session_state.show_explanations and 'explanation' in question:
+            st.info(f"💡 **Explanation:** {question['explanation']}")
+        
+        # Update question count
+        st.session_state.question_count += 1
+        st.session_state.current_question = None
+        
+        # Show level adjustment if any
+        if hasattr(env, 'level_changes') and env.level_changes:
+            last_change = env.level_changes[-1]
+            if last_change['question_number'] == env.total_questions_asked:
+                level_names = {1: "Easy", 2: "Medium", 3: "Hard"}
+                st.info(f"🎯 Difficulty adjusted to: {level_names[last_change['to_level']]}")
+        
+        # Check if assessment should end
+        if env.total_questions_asked >= env.max_questions or env._check_completion():
+            st.button("Continue", on_click=complete_assessment)
+        else:
+            st.button("Next Question", on_click=lambda: st.rerun())
+    except Exception as e:
+        st.error(f"Error processing answer: {e}")
 
 def complete_assessment():
     """Complete the assessment and show results"""
-    env = st.session_state.assessment_env
-    session = st.session_state.current_session
-    
-    # Finalize session
-    session.completed_at = datetime.now()
-    session.final_score = env.get_assessment_summary()['final_score']
-    session.questions_answered = env.total_questions_asked
-    session.ability_level = env.student_ability
-    session.performance_data = env.get_assessment_summary()
-    
-    # Save session to database
-    st.session_state.database.save_session(session)
-    
-    # Clear assessment state
-    st.session_state.assessment_started = False
-    
-    # Show results
-    show_assessment_results(session)
+    try:
+        env = st.session_state.assessment_env
+        session = st.session_state.current_session
+        
+        # Finalize session
+        session.completed_at = datetime.now()
+        session.final_score = env.get_assessment_summary()['final_score']
+        session.questions_answered = env.total_questions_asked
+        session.ability_level = env.student_ability
+        session.performance_data = env.get_assessment_summary()
+        
+        # Save session to database
+        st.session_state.database.save_session(session)
+        
+        # Clear assessment state
+        st.session_state.assessment_started = False
+        
+        # Show results
+        show_assessment_results(session)
+    except Exception as e:
+        st.error(f"Error completing assessment: {e}")
+        st.session_state.assessment_started = False
+        st.rerun()
 
 def show_assessment_results(session: AssessmentSession):
     """Display assessment results"""
@@ -878,11 +928,19 @@ def run_practice_session():
                 st.session_state.practice_level
             )
         else:
-            question = get_adaptive_question(
-                st.session_state.practice_track,
-                st.session_state.practice_level,
-                [q['text'] for q in st.session_state.practice_questions]
-            )
+            try:
+                from data.questions import get_adaptive_question
+                question = get_adaptive_question(
+                    st.session_state.practice_track,
+                    st.session_state.practice_level,
+                    [q['text'] for q in st.session_state.practice_questions]
+                )
+            except ImportError:
+                # Fallback to AI generation if module not available
+                question = st.session_state.ai_generator.generate_question_with_ai(
+                    st.session_state.practice_track,
+                    st.session_state.practice_level
+                )
         
         if question:
             st.session_state.practice_questions.append(question)
@@ -984,6 +1042,10 @@ def profile_page():
     st.subheader("🎯 Learning Preferences")
     
     with st.form("preferences_form"):
+        # Initialize profile_data if it doesn't exist
+        if not hasattr(user, 'profile_data') or user.profile_data is None:
+            user.profile_data = {}
+        
         preferred_tracks = st.multiselect(
             "Preferred Technology Tracks",
             ["web", "ai", "cyber", "data", "mobile", "devops"],
@@ -1003,9 +1065,6 @@ def profile_page():
         
         if st.form_submit_button("Save Preferences"):
             # Update user preferences
-            if not user.profile_data:
-                user.profile_data = {}
-            
             user.profile_data.update({
                 'preferred_tracks': preferred_tracks,
                 'difficulty_preference': difficulty_preference,
@@ -1063,24 +1122,27 @@ def student_overview_page():
             'Completed': len(completed_sessions),
             'Avg Score': f"{avg_score:.1%}",
             'Total Questions': total_questions,
-            'Last Active': max([s.started_at for s in sessions], default=student.created_at).strftime('%Y-%m-%d')
+            'Last Active': max([s.started_at for s in sessions], default=student.created_at).strftime('%Y-%m-%d') if sessions else student.created_at.strftime('%Y-%m-%d')
         })
     
     df = pd.DataFrame(student_data)
     st.dataframe(df, use_container_width=True)
     
     # Performance distribution
-    if completed_sessions:
+    if any(sessions for student in students):
         st.subheader("Performance Distribution")
         
         scores = [s.final_score for student in students 
                  for s in st.session_state.database.get_user_sessions(student.username)
                  if s.completed_at]
         
-        fig = px.histogram(x=scores, nbins=10, title="Score Distribution Across All Students")
-        fig.update_xaxis(title="Score")
-        fig.update_yaxis(title="Number of Assessments")
-        st.plotly_chart(fig)
+        if scores:
+            fig = px.histogram(x=scores, nbins=10, title="Score Distribution Across All Students")
+            fig.update_xaxis(title="Score")
+            fig.update_yaxis(title="Number of Assessments")
+            st.plotly_chart(fig)
+        else:
+            st.info("No completed assessments to show distribution.")
 
 def assessment_management_page():
     """Manage assessments"""
@@ -1133,9 +1195,13 @@ def question_management_page():
             with st.expander(f"{track.title()} Track"):
                 stats = {}
                 for level in [1, 2, 3]:
-                    question = get_adaptive_question(track, level)
-                    # This is a simplified count - in real implementation, you'd count available questions
-                    stats[level] = "Available" if question else "Limited"
+                    try:
+                        from data.questions import get_adaptive_question
+                        question = get_adaptive_question(track, level)
+                        # This is a simplified count - in real implementation, you'd count available questions
+                        stats[level] = "Available" if question else "Limited"
+                    except ImportError:
+                        stats[level] = "AI Generation Only"
                 
                 col1, col2, col3 = st.columns(3)
                 with col1:
@@ -1221,9 +1287,12 @@ def teacher_analytics_page():
     for session in completed_sessions:
         track_counts[session.track] = track_counts.get(session.track, 0) + 1
     
-    fig = px.pie(values=list(track_counts.values()), names=list(track_counts.keys()),
-                 title="Assessment Distribution by Track")
-    st.plotly_chart(fig)
+    if track_counts:
+        fig = px.pie(values=list(track_counts.values()), names=list(track_counts.keys()),
+                     title="Assessment Distribution by Track")
+        st.plotly_chart(fig)
+    else:
+        st.info("No data available for track popularity.")
     
     # Performance trends
     st.subheader("Performance Trends Over Time")
@@ -1246,6 +1315,8 @@ def teacher_analytics_page():
         fig.update_layout(title="Average Daily Performance", 
                          xaxis_title="Date", yaxis_title="Average Score")
         st.plotly_chart(fig)
+    else:
+        st.info("Not enough data to show performance trends over time.")
 
 def admin_dashboard():
     """Admin dashboard interface"""
@@ -1434,7 +1505,6 @@ def system_settings_page():
             st.success("Settings saved! (This is a demo)")
 
 # Main application flow
-# Main application flow
 def main():
     """Main application entry point"""
     
@@ -1502,3 +1572,6 @@ def main():
         admin_dashboard()
     else:
         st.error("Invalid user role")
+
+if __name__ == "__main__":
+    main()
