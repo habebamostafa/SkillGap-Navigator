@@ -914,7 +914,7 @@ def run_practice_session():
     with st.form(f"practice_form_{st.session_state.practice_current_q}"):
         selected_answer = st.radio("Select your answer:", current_question['options'])
         submit_button = st.form_submit_button("Submit Answer")
-
+        
         if submit_button:
             # Record answer
             is_correct = current_question['correct_answer'] == selected_answer
@@ -923,31 +923,23 @@ def run_practice_session():
                 'selected': selected_answer,
                 'correct': is_correct
             })
-
+            
             # Show feedback
             if is_correct:
                 st.success("✅ Correct!")
             else:
                 st.error(f"❌ Incorrect. The correct answer was: {current_question['correct_answer']}")
-
+            
             if 'explanation' in current_question:
                 st.info(f"💡 **Explanation:** {current_question['explanation']}")
-
-            # Move to next question index
+            
+            # Move to next question
             st.session_state.practice_current_q += 1
-
-            st.session_state.answer_submitted = True
-
-
-    # Navigation buttons (outside the form)
-    if st.session_state.get("answer_submitted", False):
-        if st.session_state.practice_current_q < st.session_state.practice_total:
-            st.button("Next Question", on_click=lambda: st.rerun())
-        else:
-            st.button("Show Results", on_click=lambda: st.rerun())
-
-        # Reset the flag after showing buttons
-        st.session_state.answer_submitted = False
+            
+            if st.session_state.practice_current_q < st.session_state.practice_total:
+                st.button("Next Question", on_click=lambda: st.rerun())
+            else:
+                st.button("Show Results", on_click=lambda: st.rerun())
 
 def show_practice_results():
     """Show practice session results"""
