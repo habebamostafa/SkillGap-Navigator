@@ -300,67 +300,44 @@ def show_main_menu():
     
     st.markdown("---")
     
-    # Main menu options with beautiful buttons
+    # Main menu options
     st.markdown("### 🛠 Available Tools")
     
-    # Create 4 beautiful buttons in a grid
     col1, col2 = st.columns(2)
-    col3, col4 = st.columns(2)
     
     with col1:
+        # Skill Gap Analysis
         st.markdown("""
-        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                    border-radius: 10px; color: white; margin-bottom: 20px;'>
-            <h3>📝 Skill Assessment</h3>
-            <p>Test your knowledge with our AI-powered assessment</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Start Assessment", key="mcqs_btn", use_container_width=True):
-            run_mcqs_app()
-    
-    with col2:
-        st.markdown("""
-        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
-                    border-radius: 10px; color: white; margin-bottom: 20px;'>
-            <h3>🔍 Skill Gap Analysis</h3>
-            <p>Identify gaps between your skills and job requirements</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Analyze Skills", key="skillgap_btn", use_container_width=True):
+        #### 📊 Skill Gap Analysis
+        Analyze your resume against job descriptions to identify skill gaps and get improvement recommendations.
+        """)
+        if st.button("🔍 Analyze Skills", type="primary", use_container_width=True):
             run_skillgap_app()
-    
-    with col3:
+        
+        # Course Recommendations
         st.markdown("""
-        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
-                    border-radius: 10px; color: white; margin-bottom: 20px;'>
-            <h3>💼 Interview Prep</h3>
-            <p>Practice with AI-powered mock interviews</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Practice Interview", key="interview_btn", use_container_width=True):
-            run_interview_app()
-    
-    with col4:
-        st.markdown("""
-        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); 
-                    border-radius: 10px; color: white; margin-bottom: 20px;'>
-            <h3>📚 Course Recommendations</h3>
-            <p>Get personalized learning recommendations</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Find Courses", key="recommend_btn", use_container_width=True):
+        #### 📚 Course Recommendations
+        Get personalized course recommendations based on your interests and skill gaps.
+        """)
+        if st.button("🎯 Find Courses", type="primary", use_container_width=True):
             run_recommend_app()
     
-    # Additional section for retaking assessment
-    st.markdown("---")
-    st.markdown("### 🔄 Update Your Progress")
-    st.markdown("""
-    If you've been learning and improving your skills, you can retake the assessment 
-    to update your skill level and get new recommendations.
-    """)
-    
-    if st.button("🔄 Retake Skill Assessment", type="secondary", use_container_width=True):
-        run_mcqs_app()
+    with col2:
+        # Interview Preparation
+        st.markdown("""
+        #### 🎤 Interview Preparation
+        Practice with AI-powered mock interviews tailored to your field and experience level.
+        """)
+        if st.button("💼 Practice Interview", type="primary", use_container_width=True):
+            run_interview_app()
+        
+        # Retake Assessment
+        st.markdown("""
+        #### 🔄 Retake Assessment
+        Update your skill level by taking the assessment again to unlock new features.
+        """)
+        if st.button("📝 Retake Assessment", type="secondary", use_container_width=True):
+            run_mcqs_app()
 
 def run_mcqs_app():
     """Run the MCQs assessment application"""
@@ -450,15 +427,13 @@ def show_navigation():
 
 def main():
     """Main application entry point"""
-    # Custom CSS for better styling
+    # Custom CSS
     st.markdown("""
     <style>
     .main-header {
         text-align: center;
         color: #2E86AB;
         padding: 1rem 0;
-        border-bottom: 2px solid #2E86AB;
-        margin-bottom: 2rem;
     }
     .feature-card {
         background-color: #f8f9fa;
@@ -466,24 +441,6 @@ def main():
         border-radius: 10px;
         border-left: 4px solid #2E86AB;
         margin-bottom: 1rem;
-        transition: transform 0.2s;
-    }
-    .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        text-align: center;
-    }
-    .stButton button {
-        transition: all 0.3s ease;
-    }
-    .stButton button:hover {
-        transform: scale(1.05);
     }
     </style>
     """, unsafe_allow_html=True)

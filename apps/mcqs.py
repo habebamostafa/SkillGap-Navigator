@@ -334,7 +334,7 @@ class AIQuestionGenerator:
 
 # Initialize global components
 if 'database' not in st.session_state:
-    st.session_state.database = SimpleDatabase()
+    st.session_state.db_manager = SimpleDatabase()
 
 if 'ai_generator' not in st.session_state:
     st.session_state.ai_generator = AIQuestionGenerator()
@@ -383,28 +383,16 @@ def authenticate_user():
                     st.error("Username already exists")
 
 def check_user_authentication():
-    """Check if user is properly authenticated"""
+    """Check if user is properly authenticated - compatible with main.py structure"""
     if 'user' not in st.session_state:
         return False
     
-    # If user is a dictionary (incorrectly stored), try to convert it back to User object
+    # Handle both dictionary and User object formats
     if isinstance(st.session_state.user, dict):
-        try:
-            # Try to get the actual user from database
-            username = st.session_state.user.get('username')
-            if username and username in st.session_state.database.users:
-                st.session_state.user = st.session_state.database.users[username]
-                return True
-            else:
-                return False
-        except:
-            return False
+        return 'username' in st.session_state.user
     
-    # If it's already a User object, check if it still exists in database
     if hasattr(st.session_state.user, 'username'):
-        username = st.session_state.user.username
-        if username in st.session_state.database.users:
-            return True
+        return True
     
     return False
                     
@@ -914,7 +902,7 @@ def run_practice_session():
     with st.form(f"practice_form_{st.session_state.practice_current_q}"):
         selected_answer = st.radio("Select your answer:", current_question['options'])
         submit_button = st.form_submit_button("Submit Answer")
-        
+
         if submit_button:
             # Record answer
             is_correct = current_question['correct_answer'] == selected_answer
@@ -923,23 +911,31 @@ def run_practice_session():
                 'selected': selected_answer,
                 'correct': is_correct
             })
-            
+
             # Show feedback
             if is_correct:
                 st.success("✅ Correct!")
             else:
                 st.error(f"❌ Incorrect. The correct answer was: {current_question['correct_answer']}")
-            
+
             if 'explanation' in current_question:
                 st.info(f"💡 **Explanation:** {current_question['explanation']}")
-            
-            # Move to next question
+
+            # Move to next question index
             st.session_state.practice_current_q += 1
-            
-            if st.session_state.practice_current_q < st.session_state.practice_total:
-                st.button("Next Question", on_click=lambda: st.rerun())
-            else:
-                st.button("Show Results", on_click=lambda: st.rerun())
+
+            st.session_state.answer_submitted = True
+
+
+    # Navigation buttons (outside the form)
+    if st.session_state.get("answer_submitted", False):
+        if st.session_state.practice_current_q < st.session_state.practice_total:
+            st.button("Next Question", on_click=lambda: st.rerun())
+        else:
+            st.button("Show Results", on_click=lambda: st.rerun())
+
+        # Reset the flag after showing buttons
+        st.session_state.answer_submitted = False
 
 def show_practice_results():
     """Show practice session results"""
