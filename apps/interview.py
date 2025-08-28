@@ -11,6 +11,26 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # --- Model Setup with Proper Caching ---
 MODEL_NAME = "google/flan-t5-large"  # Using a smaller model for better performance
 HF_TOKEN = st.secrets.get("HF_TOKEN", None)
+# --- Initialize session state keys ---
+for key, default in {
+    "model_loaded": False,
+    "model_loading": False,
+    "show_interview": False,
+    "settings_confirmed": False,
+    "selected_track": None,
+    "selected_difficulty": None,
+    "selected_num_questions": 0,
+    "interviewer_style": None,
+    "coach_style": None,
+    "current_q": 0,
+    "user_answers": [],
+    "conversation": [],
+    "interview_finished": False,
+    "questions": [],
+    "expected_answers": []
+}.items():
+    if key not in st.session_state:
+        st.session_state[key] = default
 
 # Initialize session state for model loading
 if 'model_loaded' not in st.session_state:
