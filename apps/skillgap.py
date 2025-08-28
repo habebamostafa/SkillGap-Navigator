@@ -247,8 +247,11 @@ def calculate_skill_gap(resume_skills: List[str], job_skills: List[str]) -> Dict
     
     return {
         'matched_skills': list(matched_skills),
+        'missing_skills': list(missing_skills),
+        'additional_skills': list(additional_skills),
         'total_required': len(job_set),
-        'total_matched': len(matched_skills)
+        'total_matched': len(matched_skills),
+        'match_percentage': match_percentage
     }
 
 
@@ -314,6 +317,14 @@ def create_match_gauge(match_score: int) -> go.Figure:
 
 def main():
     """Main application"""
+    
+    # Initialize session state
+    if 'model_loaded' not in st.session_state:
+        st.session_state.model_loaded = False
+    if 'analysis_history' not in st.session_state:
+        st.session_state.analysis_history = []
+    if 'current_analysis' not in st.session_state:
+        st.session_state.current_analysis = None
     
     # Header
     st.markdown('<h1 class="main-header">🎯 AI Skill-Gap Analyzer</h1>', unsafe_allow_html=True)
@@ -446,7 +457,7 @@ def main():
                 st.error("Please provide both resume and job description.")
     
     with tabs[1]:  # Results Tab
-        if hasattr(st.session_state, 'current_analysis'):
+        if st.session_state.current_analysis:
             analysis = st.session_state.current_analysis
             # Skill Analysis
             st.markdown("### 🎯 Skill Analysis")

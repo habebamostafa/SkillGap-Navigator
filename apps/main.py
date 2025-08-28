@@ -166,6 +166,12 @@ def init_session_state():
     
     if 'user' not in st.session_state:
         st.session_state.user = None
+    
+    if 'model_loaded' not in st.session_state:
+        st.session_state.model_loaded = False
+    
+    if 'current_app' not in st.session_state:
+        st.session_state.current_app = None
 
 def login_page():
     """Login and registration page"""
@@ -340,21 +346,26 @@ def run_skillgap_app():
 def run_interview_app():
     """Run the interview preparation application"""
     try:
-        # استيراد وتشغيل التطبيق بشكل صحيح
-        from interview import main as interview_main
-        interview_main()
-    except ImportError as e:
+        # Import and run the interview app
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("interview", "interview.py")
+        interview_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(interview_module)
+        interview_module.main()
+    except Exception as e:
         st.error(f"Could not load interview application: {e}")
         st.markdown("Please make sure interview.py is in the same directory.")
-
 
 def run_recommend_app():
     """Run the course recommendation application"""
     try:
-        # استيراد وتشغيل التطبيق بشكل صحيح
-        from recommend import main as recommend_main
-        recommend_main()
-    except ImportError as e:
+        # Import and run the recommendation app
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("recommend", "recommend.py")
+        recommend_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(recommend_module)
+        recommend_module.main()
+    except Exception as e:
         st.error(f"Could not load recommendation application: {e}")
         st.markdown("Please make sure recommend.py is in the same directory.")
 
@@ -374,14 +385,12 @@ def load_external_app(app_name):
         elif app_name == "interview":
             # Import and run interview app
             import interview
-            # Since interview.py doesn't have a main(), we'll run it directly
-            exec(open("interview.py").read())
+            interview.main()
             
         elif app_name == "recommend":
             # Import and run recommendation app
             import recommend
-            # Since recommend.py doesn't have a main(), we'll run it directly
-            exec(open("recommend.py").read())
+            recommend.main()
             
     except ImportError as e:
         st.error(f"Could not load {app_name} application: {e}")
@@ -406,21 +415,13 @@ def main():
         text-align: center;
         color: #2E86AB;
         padding: 1rem 0;
-        margin-bottom: 2rem;
     }
-    .metric-container {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #2E86AB;
-    }
-    .app-card {
+    .feature-card {
+        background-color: #f8f9fa;
         padding: 1.5rem;
-        margin: 1rem 0;
         border-radius: 10px;
-        background-color: #ffffff;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         border-left: 4px solid #2E86AB;
+        margin-bottom: 1rem;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -428,19 +429,16 @@ def main():
     # Initialize session state
     init_session_state()
     
-    # Check if user is logged in
-    if not st.session_state.logged_in:
-        login_page()
-        return
-    
-    # Check if user is running a specific app
+    # Check if we're running an external app
     if st.session_state.get('current_app'):
         show_navigation()
         load_external_app(st.session_state.current_app)
-        return
-    
-    # Show main dashboard
-    main_dashboard()
+    else:
+        # Main application flow
+        if not st.session_state.logged_in:
+            login_page()
+        else:
+            main_dashboard()
 
 if __name__ == "__main__":
     main()
