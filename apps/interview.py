@@ -63,6 +63,7 @@ def generate_text(prompt, max_len=150, temperature=0.7):
         st.error(f"Model error: {e}")
         return get_fallback_response(prompt)
 
+# استبدال الدالة get_fallback_response
 def get_fallback_response(prompt):
     """Provide fallback responses when model fails"""
     if "feedback" in prompt.lower():
@@ -74,7 +75,7 @@ def get_fallback_response(prompt):
         ]
         return random.choice(feedbacks)
     else:
-        # Return a relevant question based on the track
+        # استخدام القيم الافتراضية إذا لم تكن موجودة في session state
         track = st.session_state.get('selected_track', 'Artificial Intelligence')
         difficulty = st.session_state.get('selected_difficulty', 'Easy')
         
@@ -118,7 +119,7 @@ def get_fallback_response(prompt):
         if track in questions and difficulty in questions[track]:
             return random.choice(questions[track][difficulty])
         return "Can you explain your approach to problem-solving in technical projects?"
-
+    
 @st.cache_resource(show_spinner=False)
 def load_model_components():
     """Load the model and tokenizer with proper caching"""

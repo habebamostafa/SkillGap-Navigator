@@ -1471,6 +1471,3 @@ def main():
         admin_dashboard()
     else:
         st.error("Invalid user role")
-
-if __name__ == "__main__":
-    main()

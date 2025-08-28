@@ -337,13 +337,24 @@ def run_skillgap_app():
 
 def run_interview_app():
     """Run the interview preparation application"""
-    st.session_state.current_app = "interview"
-    st.rerun()
+    try:
+        # استيراد وتشغيل التطبيق بشكل صحيح
+        from interview import main as interview_main
+        interview_main()
+    except ImportError as e:
+        st.error(f"Could not load interview application: {e}")
+        st.markdown("Please make sure interview.py is in the same directory.")
+
 
 def run_recommend_app():
     """Run the course recommendation application"""
-    st.session_state.current_app = "recommend"
-    st.rerun()
+    try:
+        # استيراد وتشغيل التطبيق بشكل صحيح
+        from recommend import main as recommend_main
+        recommend_main()
+    except ImportError as e:
+        st.error(f"Could not load recommendation application: {e}")
+        st.markdown("Please make sure recommend.py is in the same directory.")
 
 def load_external_app(app_name):
     """Load external application modules"""
