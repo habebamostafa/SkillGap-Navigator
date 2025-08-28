@@ -130,7 +130,31 @@ class DatabaseManager:
                         st.success("Account created successfully! Please login.")
                     else:
                         st.error("Username already exists")
-    
+    def check_user_authentication():
+        """Check if user is properly authenticated"""
+        if 'user' not in st.session_state:
+            return False
+        
+        # If user is a dictionary (incorrectly stored), try to convert it back to User object
+        if isinstance(st.session_state.user, dict):
+            try:
+                # Try to get the actual user from database
+                username = st.session_state.user.get('username')
+                if username and username in st.session_state.database.users:
+                    st.session_state.user = st.session_state.database.users[username]
+                    return True
+                else:
+                    return False
+            except:
+                return False
+        
+        # If it's already a User object, check if it still exists in database
+        if hasattr(st.session_state.user, 'username'):
+            username = st.session_state.user.username
+            if username in st.session_state.database.users:
+                return True
+        
+        return False    
     def update_user_status(self, user_id, is_new_user=None, assessment_completed=None, skill_level=None):
         """Update user status after completing assessments"""
         conn = sqlite3.connect(DATABASE_FILE)
