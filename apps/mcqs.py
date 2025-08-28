@@ -50,74 +50,6 @@ class AssessmentSession:
     ability_level: float = 0.5
     performance_data: Dict = None
 
-class SimpleDatabase:
-    """Simple in-memory database for users and sessions"""
-    
-    def __init__(self):
-        self.users = {}
-        self.sessions = {}
-        self.load_sample_data()
-    
-    def load_sample_data(self):
-        """Load some sample users for testing"""
-        sample_users = [
-            {"username": "admin", "password": "admin123", "email": "admin@test.com", "role": "admin"},
-            {"username": "student1", "password": "pass123", "email": "student1@test.com", "role": "student"},
-            {"username": "teacher", "password": "teach123", "email": "teacher@test.com", "role": "teacher"}
-        ]
-        
-        for user_data in sample_users:
-            self.create_user(
-                user_data["username"],
-                user_data["password"], 
-                user_data["email"],
-                user_data["role"]
-            )
-    
-    def hash_password(self, password: str) -> str:
-        """Hash password using SHA256"""
-        return hashlib.sha256(password.encode()).hexdigest()
-    
-    def create_user(self, username: str, password: str, email: str, role: str = "student") -> bool:
-        """Create a new user"""
-        if username in self.users:
-            return False
-        
-        self.users[username] = User(
-            username=username,
-            password_hash=self.hash_password(password),
-            email=email,
-            created_at=datetime.now(),
-            role=role,
-            profile_data={}
-        )
-        return True
-    
-    def authenticate_user(self, username: str, password: str) -> Optional[User]:
-        """Authenticate user login"""
-        if username not in self.users:
-            return None
-        
-        user = self.users[username]
-        if user.password_hash == self.hash_password(password):
-            return user
-        return None
-    
-    def get_user_sessions(self, username: str) -> List[AssessmentSession]:
-        """Get all sessions for a user"""
-        return [session for session in self.sessions.values() if session.username == username]
-    
-    def save_session(self, session: AssessmentSession):
-        """Save assessment session"""
-        self.sessions[session.session_id] = session
-    
-    def get_all_users(self) -> List[User]:
-        """Get all users (admin only)"""
-        return list(self.users.values())
-    
-    def get_all_sessions(self) -> List[AssessmentSession]:
-        """Get all sessions (admin only)"""
-        return list(self.sessions.values())
 
 # AI Question Generator
 class AIQuestionGenerator:
@@ -332,9 +264,6 @@ class AIQuestionGenerator:
             'level': level
         }
 
-# Initialize global components
-if 'database' not in st.session_state:
-    st.session_state.db_manager = SimpleDatabase()
 
 if 'ai_generator' not in st.session_state:
     st.session_state.ai_generator = AIQuestionGenerator()
@@ -560,7 +489,6 @@ def process_answer(question, selected_answer):
             level_names = {1: "Easy", 2: "Medium", 3: "Hard"}
             st.info(f"🎯 Difficulty adjusted to: {level_names[last_change['to_level']]}")
 
-    # بدل الأزرار هنا بعلامة في session_state
     st.session_state["answer_processed"] = True
 
     # Update question count
@@ -967,25 +895,6 @@ def profile_page():
             
             st.success("Preferences saved!")
 
-def teacher_dashboard():
-    """Teacher dashboard interface"""
-    st.title(f"Teacher Dashboard - {st.session_state.user.username} 👨‍🏫")
-    
-    st.sidebar.title("Teacher Navigation")
-    page = st.sidebar.selectbox(
-        "Choose a page",
-        ["Student Overview", "Assessment Management", "Question Management", "Analytics"]
-    )
-    
-    if page == "Student Overview":
-        student_overview_page()
-    elif page == "Assessment Management":
-        assessment_management_page()
-    elif page == "Question Management":
-        question_management_page()
-    elif page == "Analytics":
-        teacher_analytics_page()
-
 def student_overview_page():
     """Overview of all students"""
     st.header("📊 Student Overview")
@@ -1073,132 +982,6 @@ def assessment_management_page():
         st.subheader("Create Custom Assessment")
         st.info("Feature coming soon: Create custom assessments with specific question sets.")
 
-def question_management_page():
-    """Manage questions"""
-    st.header("❓ Question Management")
-    
-    tab1, tab2, tab3 = st.tabs(["Question Pool Stats", "Add Questions", "AI Question Generator"])
-    
-    with tab1:
-        st.subheader("Current Question Pool Statistics")
-        
-        for track in ["web", "ai", "cyber", "data", "mobile", "devops"]:
-            with st.expander(f"{track.title()} Track"):
-                stats = {}
-                for level in [1, 2, 3]:
-                    question = get_adaptive_question(track, level)
-                    # This is a simplified count - in real implementation, you'd count available questions
-                    stats[level] = "Available" if question else "Limited"
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Easy", stats[1])
-                with col2:
-                    st.metric("Medium", stats[2])
-                with col3:
-                    st.metric("Hard", stats[3])
-    
-    with tab2:
-        st.subheader("Add New Questions")
-        
-        with st.form("add_question_form"):
-            new_track = st.selectbox("Track", ["web", "ai", "cyber", "data", "mobile", "devops"])
-            new_level = st.selectbox("Level", [1, 2, 3], format_func=lambda x: ["Easy", "Medium", "Hard"][x-1])
-            
-            question_text = st.text_area("Question Text")
-            
-            st.write("Answer Options:")
-            option1 = st.text_input("Option 1 (Correct Answer)")
-            option2 = st.text_input("Option 2")
-            option3 = st.text_input("Option 3")
-            option4 = st.text_input("Option 4")
-            
-            explanation = st.text_area("Explanation (Optional)")
-            
-            if st.form_submit_button("Add Question"):
-                if all([question_text, option1, option2, option3, option4]):
-                    # In a real implementation, you would add this to your question database
-                    st.success("Question added successfully! (Note: This is a demo)")
-                else:
-                    st.error("Please fill in all required fields")
-    
-    with tab3:
-        st.subheader("AI Question Generator")
-        
-        with st.form("ai_generate_form"):
-            ai_track = st.selectbox("Track for AI Generation", ["web", "ai", "cyber", "data", "mobile", "devops"])
-            ai_level = st.selectbox("Difficulty Level", [1, 2, 3], format_func=lambda x: ["Easy", "Medium", "Hard"][x-1])
-            ai_topic = st.text_input("Specific Topic (Optional)", placeholder="e.g., React hooks, SQL injection")
-            
-            if st.form_submit_button("Generate Question"):
-                with st.spinner("Generating question with AI..."):
-                    generated_q = st.session_state.ai_generator.generate_question_with_ai(
-                        ai_track, ai_level, ai_topic
-                    )
-                    
-                    if generated_q:
-                        st.success("Question generated successfully!")
-                        st.json(generated_q)
-                    else:
-                        st.error("Failed to generate question")
-
-def teacher_analytics_page():
-    """Teacher analytics dashboard"""
-    st.header("📈 Analytics Dashboard")
-    
-    all_sessions = st.session_state.database.get_all_sessions()
-    completed_sessions = [s for s in all_sessions if s.completed_at]
-    
-    if not completed_sessions:
-        st.info("No completed assessments to analyze yet.")
-        return
-    
-    # Overall metrics
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("Total Assessments", len(completed_sessions))
-    with col2:
-        avg_score = np.mean([s.final_score for s in completed_sessions])
-        st.metric("Average Score", f"{avg_score:.1%}")
-    with col3:
-        total_questions = sum(s.questions_answered for s in completed_sessions)
-        st.metric("Total Questions", total_questions)
-    with col4:
-        unique_students = len(set(s.username for s in completed_sessions))
-        st.metric("Active Students", unique_students)
-    
-    # Track popularity
-    st.subheader("Track Popularity")
-    track_counts = {}
-    for session in completed_sessions:
-        track_counts[session.track] = track_counts.get(session.track, 0) + 1
-    
-    fig = px.pie(values=list(track_counts.values()), names=list(track_counts.keys()),
-                 title="Assessment Distribution by Track")
-    st.plotly_chart(fig)
-    
-    # Performance trends
-    st.subheader("Performance Trends Over Time")
-    
-    # Group sessions by date
-    daily_data = {}
-    for session in completed_sessions:
-        date_key = session.completed_at.date()
-        if date_key not in daily_data:
-            daily_data[date_key] = []
-        daily_data[date_key].append(session.final_score)
-    
-    if len(daily_data) > 1:
-        dates = sorted(daily_data.keys())
-        avg_scores = [np.mean(daily_data[date]) for date in dates]
-        
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=dates, y=avg_scores, mode='lines+markers',
-                                name='Daily Average Score'))
-        fig.update_layout(title="Average Daily Performance", 
-                         xaxis_title="Date", yaxis_title="Average Score")
-        st.plotly_chart(fig)
 
 def admin_dashboard():
     """Admin dashboard interface"""
@@ -1227,7 +1010,7 @@ def system_overview_page():
     all_users = st.session_state.database.get_all_users()
     all_sessions = st.session_state.database.get_all_sessions()
     
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3  = st.columns(4)
     
     with col1:
         st.metric("Total Users", len(all_users))
@@ -1235,9 +1018,6 @@ def system_overview_page():
         students = [u for u in all_users if u.role == 'student']
         st.metric("Students", len(students))
     with col3:
-        teachers = [u for u in all_users if u.role == 'teacher']
-        st.metric("Teachers", len(teachers))
-    with col4:
         st.metric("Total Sessions", len(all_sessions))
     
     # Recent activity
@@ -1291,7 +1071,7 @@ def user_management_page():
             new_username = st.text_input("Username")
             new_email = st.text_input("Email")
             new_password = st.text_input("Password", type="password")
-            new_role = st.selectbox("Role", ["student", "teacher", "admin"])
+            new_role = st.selectbox("Role", ["student", "admin"])
             
             if st.form_submit_button("Create User"):
                 if st.session_state.database.create_user(new_username, new_password, new_email, new_role):
@@ -1442,12 +1222,4 @@ def main():
     
     # Route to appropriate dashboard based on user role
     user_role = st.session_state.user.role
-    
-    if user_role == "student":
-        student_dashboard()
-    elif user_role == "teacher":
-        teacher_dashboard()
-    elif user_role == "admin":
-        admin_dashboard()
-    else:
-        st.error("Invalid user role")
+    student_dashboard()
