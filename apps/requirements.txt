@@ -13,6 +13,6 @@ sentence-transformers
 torch
 transformers
 requests
-base64
-json
 plotly
+protobuf>=3.20.0
+python-dotenv>=0.19.0
