@@ -253,20 +253,20 @@ def show_main_menu():
     st.markdown(f"### Welcome back, {user.get('full_name', 'User')}!")
     
     # Show user's current level
-    level_names = {0: "Not Assessed", 1: "Beginner", 2: "Intermediate", 3: "Advanced"}
-    current_level = level_names.get(user.get('skill_level', 0), "Unknown")
+    # level_names = {0: "Not Assessed", 1: "Beginner", 2: "Intermediate", 3: "Advanced"}
+    # current_level = level_names.get(user.get('skill_level', 0), "Unknown")
     
-    col1, col2, col3 = st.columns(3)
+    # col1, col2, col3 = st.columns(3)
     
-    with col1:
-        st.metric("Current Level", current_level)
-    with col2:
-        status = "Completed" if user.get('assessment_completed') else "Pending"
-        st.metric("Assessment Status", status)
-    with col3:
-        st.metric("Account Type", "Student")
+    # with col1:
+    #     st.metric("Current Level", current_level)
+    # with col2:
+    #     status = "Completed" if user.get('assessment_completed') else "Pending"
+    #     st.metric("Assessment Status", status)
+    # with col3:
+    #     st.metric("Account Type", "Student")
     
-    st.markdown("---")
+    # st.markdown("---")
     
     # Main menu options with beautiful buttons - IN THE MAIN PAGE
     st.markdown("### 🛠 Available Tools")
