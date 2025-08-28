@@ -319,16 +319,7 @@ def show_main_menu():
         if st.button("Find Courses", key="recommend_btn", use_container_width=True):
             run_recommend_app()
     
-    # Additional section for retaking assessment
-    st.markdown("---")
-    st.markdown("### 🔄 Update Your Progress")
-    st.markdown("""
-    If you've been learning and improving your skills, you can retake the assessment 
-    to update your skill level and get new recommendations.
-    """)
     
-    if st.button("🔄 Retake Skill Assessment", type="secondary", use_container_width=True):
-        run_mcqs_app()
 
 def run_mcqs_app():
     """Run the MCQs assessment application"""
