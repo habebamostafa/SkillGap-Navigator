@@ -354,13 +354,6 @@ def load_external_app(app_name):
     """Load external application modules"""
     try:
         if app_name == "mcqs":
-            # Clear any conflicting session state before loading mcqs
-            if 'assessment_started' in st.session_state:
-                del st.session_state.assessment_started
-            if 'practice_active' in st.session_state:
-                del st.session_state.practice_active
-            
-            # Import and run MCQs app
             try:
                 from apps.mcqs import main as mcqs_main
                 mcqs_main()
