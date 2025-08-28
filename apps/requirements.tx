@@ -11,7 +11,8 @@ sentence-transformers
 torch
 transformers
 requests
-
+base64
+json
 # Visualization
 plotly
 matplotlib
