@@ -172,9 +172,6 @@ def init_session_state():
     
     if 'current_app' not in st.session_state:
         st.session_state.current_app = None
-    
-    # if 'assessment_completed' not in st.session_state:
-    #     st.session_state.assessment_completed = False
 
 def login_page():
     """Login and registration page"""
@@ -234,7 +231,7 @@ def main_dashboard():
     """Main dashboard after login"""
     user = st.session_state.user
     
-    # Sidebar with user info
+    # Sidebar with user info only
     with st.sidebar:
         st.markdown(f"### Welcome, {user.get('full_name', 'User')}")
         st.markdown(f"**Username:** {user.get('username', 'N/A')}")
@@ -244,38 +241,9 @@ def main_dashboard():
             st.session_state.logged_in = False
             st.session_state.user = None
             st.session_state.current_app = None
-            st.session_state.assessment_completed = False
             st.rerun()
     
-    # Check if user is new and needs assessment
-    # if user.get('is_new_user') and not user.get('assessment_completed'):
-    #     show_new_user_flow()
-    # else:
-        show_main_menu()
-
-def show_new_user_flow():
-    """Show assessment for new users"""
-    st.title("🎯 Welcome to AI Learning Platform!")
-    st.markdown("### Let's start by assessing your current skill level")
-    
-    st.info("""
-    **First Time Setup:**
-    
-    Before we begin, we need to understand your current skill level through a quick assessment.
-    This will help us personalize your learning experience and provide better recommendations.
-    
-    **What happens next:**
-    1. Take a skill assessment (10-15 questions)
-    2. Get your skill level evaluation
-    3. Access personalized learning tools
-    """)
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col2:
-        if st.button("🚀 Start Skill Assessment", type="primary", use_container_width=True):
-            # Redirect to MCQs app
-            run_mcqs_app()
+    show_main_menu()
 
 def show_main_menu():
     """Show main menu for existing users"""
@@ -300,7 +268,7 @@ def show_main_menu():
     
     st.markdown("---")
     
-    # Main menu options with beautiful buttons
+    # Main menu options with beautiful buttons - IN THE MAIN PAGE
     st.markdown("### 🛠 Available Tools")
     
     # Create 4 beautiful buttons in a grid
