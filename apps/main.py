@@ -5,6 +5,8 @@ from datetime import datetime
 import os
 import subprocess
 import sys
+import sys, os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Database setup
 DATABASE_FILE = "students.db"
@@ -164,9 +166,6 @@ def init_session_state():
     
     if 'user' not in st.session_state:
         st.session_state.user = None
-    
-    if 'current_app' not in st.session_state:
-        st.session_state.current_app = None
 
 def login_page():
     """Login and registration page"""
@@ -235,7 +234,6 @@ def main_dashboard():
         if st.button("Logout", type="secondary"):
             st.session_state.logged_in = False
             st.session_state.user = None
-            st.session_state.current_app = None
             st.rerun()
     
     # Check if user is new and needs assessment
@@ -341,40 +339,53 @@ def run_skillgap_app():
 
 def run_interview_app():
     """Run the interview preparation application"""
-    st.session_state.current_app = "interview"
-    st.rerun()
+    try:
+        # استيراد وتشغيل التطبيق بشكل صحيح
+        from interview import main as interview_main
+        interview_main()
+    except ImportError as e:
+        st.error(f"Could not load interview application: {e}")
+        st.markdown("Please make sure interview.py is in the same directory.")
+
 
 def run_recommend_app():
     """Run the course recommendation application"""
-    st.session_state.current_app = "recommend"
-    st.rerun()
+    try:
+        # استيراد وتشغيل التطبيق بشكل صحيح
+        from recommend import main as recommend_main
+        recommend_main()
+    except ImportError as e:
+        st.error(f"Could not load recommendation application: {e}")
+        st.markdown("Please make sure recommend.py is in the same directory.")
 
 def load_external_app(app_name):
     """Load external application modules"""
     try:
         if app_name == "mcqs":
             # Import and run MCQs app
-            from mcqs import main as mcqs_main
-            mcqs_main()
+            import mcqs
+            mcqs.main()
             
         elif app_name == "skillgap":
             # Import and run skill gap app
-            from skillgap import main as skillgap_main
-            skillgap_main()
+            import skillgap
+            skillgap.main()
             
         elif app_name == "interview":
             # Import and run interview app
-            from interview import main as interview_main
-            interview_main()
+            import interview
+            # Since interview.py doesn't have a main(), we'll run it directly
+            exec(open("interview.py").read())
             
         elif app_name == "recommend":
             # Import and run recommendation app
-            from recommend import main as recommend_main
-            recommend_main()
+            import recommend
+            # Since recommend.py doesn't have a main(), we'll run it directly
+            exec(open("recommend.py").read())
             
     except ImportError as e:
         st.error(f"Could not load {app_name} application: {e}")
-        st.markdown(f"Please make sure {app_name}.py is in the same directory.")
+        st.markdown("Please make sure all application files are in the same directory.")
     except Exception as e:
         st.error(f"Error running {app_name}: {e}")
 
