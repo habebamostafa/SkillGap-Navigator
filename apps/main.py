@@ -440,7 +440,7 @@ def main():
     """, unsafe_allow_html=True)
     
     # Initialize session state
-    # init_session_state()
+    init_session_state()
     
     # Check if we're running an external app
     if st.session_state.get('current_app'):
