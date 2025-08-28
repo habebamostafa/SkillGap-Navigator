@@ -26,8 +26,8 @@ def main():
     def load_model_and_data():
         try:
             # Load your course dataset and precomputed embeddings
-            data = joblib.load("courses_df1.pkl")
-            embeddings = joblib.load("embeddings1.pkl")
+            data = joblib.load("apps/courses_df1.pkl")
+            embeddings = joblib.load("apps/embeddings1.pkl")
 
             # Load SentenceTransformer model directly instead of using embedding_model1.pkl
             model = SentenceTransformer("all-MiniLM-L6-v2")
