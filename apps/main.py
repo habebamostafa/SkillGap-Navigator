@@ -248,9 +248,9 @@ def main_dashboard():
             st.rerun()
     
     # Check if user is new and needs assessment
-    if user.get('is_new_user') and not user.get('assessment_completed'):
-        show_new_user_flow()
-    else:
+    # if user.get('is_new_user') and not user.get('assessment_completed'):
+    #     show_new_user_flow()
+    # else:
         show_main_menu()
 
 def show_new_user_flow():
