@@ -334,7 +334,7 @@ class AIQuestionGenerator:
 
 # Initialize global components
 if 'database' not in st.session_state:
-    st.session_state.database = SimpleDatabase()
+    st.session_state.db_manager = SimpleDatabase()
 
 if 'ai_generator' not in st.session_state:
     st.session_state.ai_generator = AIQuestionGenerator()
