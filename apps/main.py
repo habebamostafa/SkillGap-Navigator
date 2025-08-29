@@ -175,7 +175,7 @@ def init_session_state():
 
 def login_page():
     """Login and registration page"""
-    st.title("🎯 AI Learning Platform")
+    st.title("🎯 AI Skill-Gap Platform")
     st.markdown("### Welcome! Please login or create an account")
     
     tab1, tab2 = st.tabs(["Login", "Sign Up"])
