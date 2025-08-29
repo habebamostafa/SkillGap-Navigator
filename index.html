@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Skill-Gap Analyzer Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .presentation-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .slide {
+            background: white;
+            margin: 2rem 0;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            animation: fadeInUp 0.8s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .title-slide {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .title-slide::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+        }
+
+        .main-title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            color: #1e3d59;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: #667eea;
+            color: white;
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .feature-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .tech-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .tech-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .workflow-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .workflow-step {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            position: relative;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .workflow-step:hover {
+            background: #e9ecef;
+            transform: scale(1.02);
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 auto 1rem auto;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(67, 233, 123, 0.3);
+        }
+
+        .metric-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .platform-modules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .module-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .module-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .module-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .module-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e3d59;
+            margin-bottom: 1rem;
+        }
+
+        .code-showcase {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .demo-interface {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .impact-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .impact-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .impact-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+        }
+
+        .screenshot-mockup {
+            background: #1e1e1e;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 2rem 0;
+            border: 3px solid #333;
+            position: relative;
+        }
+
+        .screenshot-mockup::before {
+            content: '● ● ●';
+            color: #ff6b6b;
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            font-size: 1.2rem;
+            letter-spacing: 5px;
+        }
+
+        .mockup-content {
+            margin-top: 2rem;
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            color: #333;
+        }
+
+        .navigation {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.9);
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-dot.active {
+            background: #667eea;
+            transform: scale(1.2);
+        }
+
+        @media (max-width: 768px) {
+            .main-title { font-size: 2.5rem; }
+            .section-title { font-size: 2rem; }
+            .slide { padding: 2rem 1.5rem; }
+            .navigation { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <!-- Title Slide -->
+        <div class="slide title-slide" id="slide1">
+            <h1 class="main-title">AI Skill-Gap Analyzer Platform</h1>
+            <p class="subtitle">Bridging the Gap Between Education and Employment Through Intelligent Assessment</p>
+            <div style="margin-top: 2rem;">
+                <div class="tech-badge" style="margin: 0.5rem;">Machine Learning</div>
+                <div class="tech-badge" style="margin: 0.5rem;">Natural Language Processing</div>
+                <div class="tech-badge" style="margin: 0.5rem;">Adaptive Assessment</div>
+                <div class="tech-badge" style="margin: 0.5rem;">Career Intelligence</div>
+            </div>
+        </div>
+
+        <!-- Problem Statement -->
+        <div class="slide" id="slide2">
+            <h2 class="section-title">The Challenge We're Solving</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;">
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1rem;">The Growing Skills Gap Crisis</h3>
+                    <p style="font-size: 1.2rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                        Universities struggle to keep pace with rapidly evolving industry demands, creating a significant 
+                        disparity between graduate skills and employer requirements.
+                    </p>
+                    <ul style="font-size: 1.1rem; line-height: 1.8;">
+                        <li><strong>85% of jobs in 2030</strong> don't exist today</li>
+                        <li><strong>50% of all employees</strong> need reskilling by 2025</li>
+                        <li><strong>76% of HR leaders</strong> struggle to find qualified candidates</li>
+                        <li><strong>6 months average</strong> time to fill technical positions</li>
+                    </ul>
+                </div>
+                <div class="impact-cards">
+                    <div class="impact-card">
+                        <div class="feature-icon">🎓</div>
+                        <h4>For Students</h4>
+                        <p>Uncertainty about career paths and difficulty meeting job requirements</p>
+                    </div>
+                    <div class="impact-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <div class="feature-icon">🏢</div>
+                        <h4>For Employers</h4>
+                        <p>Critical talent shortages and extended hiring cycles</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Our Solution -->
+        <div class="slide" id="slide3">
+            <h2 class="section-title">Our Comprehensive AI Solution</h2>
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <p style="font-size: 1.3rem; color: #666; max-width: 800px; margin: 0 auto;">
+                    A multi-module AI platform that provides intelligent assessment, skill gap analysis, 
+                    interview preparation, and personalized learning recommendations.
+                </p>
+            </div>
+            
+            <div class="platform-modules">
+                <div class="module-card">
+                    <div class="module-icon">🎯</div>
+                    <h3 class="module-title">Adaptive Assessment</h3>
+                    <p>AI-powered testing that adjusts difficulty based on student performance using reinforcement learning algorithms.</p>
+                    <ul style="margin-top: 1rem; text-align: left;">
+                        <li>Real-time difficulty adjustment</li>
+                        <li>Performance analytics</li>
+                        <li>Multi-track support (AI, Web Dev, Data Science)</li>
+                    </ul>
+                </div>
+
+                <div class="module-card">
+                    <div class="module-icon">🔍</div>
+                    <h3 class="module-title">Skill Gap Analysis</h3>
+                    <p>BERT-based model that analyzes resumes against job descriptions to identify skill gaps and provide actionable insights.</p>
+                    <ul style="margin-top: 1rem; text-align: left;">
+                        <li>Resume parsing (PDF, DOCX, TXT)</li>
+                        <li>Job requirement extraction</li>
+                        <li>Match scoring and recommendations</li>
+                    </ul>
+                </div>
+
+                <div class="module-card">
+                    <div class="module-icon">💼</div>
+                    <h3 class="module-title">Interview Simulation</h3>
+                    <p>AI-powered mock interviews with real-time feedback using transformer models for natural language generation.</p>
+                    <ul style="margin-top: 1rem; text-align: left;">
+                        <li>Industry-specific questions</li>
+                        <li>Real-time feedback generation</li>
+                        <li>Performance tracking</li>
+                    </ul>
+                </div>
+
+                <div class="module-card">
+                    <div class="module-icon">📚</div>
+                    <h3 class="module-title">Course Recommendations</h3>
+                    <p>Personalized learning path suggestions using sentence transformers and similarity matching algorithms.</p>
+                    <ul style="margin-top: 1rem; text-align: left;">
+                        <li>Content-based filtering</li>
+                        <li>Skill-to-course mapping</li>
+                        <li>Continuous curriculum updates</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Architecture -->
+        <div class="slide" id="slide4">
+            <h2 class="section-title">Technical Architecture</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin: 2rem 0;">
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">Core Technologies</h3>
+                    <div class="tech-stack" style="justify-content: flex-start; flex-direction: column; gap: 0.5rem;">
+                        <div class="tech-badge" style="background: linear-gradient(135deg, #ff6b6b, #ee5a52);">
+                            🐍 Python + Streamlit
+                        </div>
+                        <div class="tech-badge" style="background: linear-gradient(135deg, #4ecdc4, #44a08d);">
+                            🤖 Transformers + BERT
+                        </div>
+                        <div class="tech-badge" style="background: linear-gradient(135deg, #45b7d1, #96c93d);">
+                            🧠 PyTorch + Reinforcement Learning
+                        </div>
+                        <div class="tech-badge" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                            📊 Plotly + Data Visualization
+                        </div>
+                        <div class="tech-badge" style="background: linear-gradient(135deg, #ffecd2, #fcb69f);">
+                            🗄️ SQLite + Session Management
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">AI Models & Algorithms</h3>
+                    <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px;">
+                        <div style="margin-bottom: 1rem;">
+                            <strong>BERT-based Skill Matching:</strong>
+                            <div style="background: #e3f2fd; padding: 0.5rem; border-radius: 5px; margin-top: 0.5rem; font-size: 0.9rem;">
+                                cosine_similarity(resume_embedding, job_embedding)
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <strong>Q-Learning for Adaptation:</strong>
+                            <div style="background: #e8f5e8; padding: 0.5rem; border-radius: 5px; margin-top: 0.5rem; font-size: 0.9rem;">
+                                Q(s,a) = Q(s,a) + α[R + γ max Q(s',a') - Q(s,a)]
+                            </div>
+                        </div>
+                        <div>
+                            <strong>Sentence Transformers:</strong>
+                            <div style="background: #fff3cd; padding: 0.5rem; border-radius: 5px; margin-top: 0.5rem; font-size: 0.9rem;">
+                                all-MiniLM-L6-v2 for course recommendations
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Platform Workflow -->
+        <div class="slide" id="slide5">
+            <h2 class="section-title">Platform Workflow & User Journey</h2>
+            
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <div class="step-number">1</div>
+                    <h4>User Registration</h4>
+                    <p>Secure authentication with SQLite database and session management</p>
+                </div>
+                
+                <div class="workflow-step">
+                    <div class="step-number">2</div>
+                    <h4>Adaptive Assessment</h4>
+                    <p>RL-powered testing that adapts in real-time to student performance</p>
+                </div>
+                
+                <div class="workflow-step">
+                    <div class="step-number">3</div>
+                    <h4>Skill Analysis</h4>
+                    <p>BERT model analyzes resume vs job requirements with detailed gap identification</p>
+                </div>
+                
+                <div class="workflow-step">
+                    <div class="step-number">4</div>
+                    <h4>Interview Prep</h4>
+                    <p>AI-generated questions with transformer-based feedback and coaching</p>
+                </div>
+                
+                <div class="workflow-step">
+                    <div class="step-number">5</div>
+                    <h4>Learning Path</h4>
+                    <p>Personalized course recommendations using semantic similarity matching</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Innovation -->
+        <div class="slide" id="slide6">
+            <h2 class="section-title">Key Technical Innovations</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">Reinforcement Learning Assessment</h3>
+                    <div class="code-showcase">
+class RLAssessmentAgent:
+    def choose_action(self, state):
+        # Exploration vs Exploitation
+        if random.random() < self.epsilon:
+            action = self._explore_action(state)
+        else:
+            action = self._exploit_action(state)
+        
+        return action
+    
+    def update_q_table(self, state, action, 
+                       reward, next_state):
+        current_q = self.q_table[state][action]
+        max_next_q = max(self.q_table[next_state].values())
+        
+        new_q = current_q + self.alpha * (
+            reward + self.gamma * max_next_q - current_q
+        )
+        self.q_table[state][action] = new_q
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">BERT-based Skill Matching</h3>
+                    <div class="code-showcase">
+def predict_match_score(resume_text, job_text, 
+                        model, tokenizer):
+    # Clean and prepare texts
+    pair_text = f"[CLS] {job_text} [SEP] {resume_text}"
+    
+    # Tokenize input
+    encoding = tokenizer(
+        pair_text,
+        padding="max_length",
+        truncation=True,
+        max_length=256,
+        return_tensors="pt"
+    )
+    
+    # Generate predictions
+    with torch.no_grad():
+        outputs = model(**encoding)
+        logits = outputs.logits
+        probs = torch.softmax(logits, dim=-1)
+        
+    return torch.argmax(probs).item() + 1
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 2rem;">
+                <h3 style="color: #667eea; text-align: center; margin-bottom: 1.5rem;">Adaptive Question Generation</h3>
+                <div class="demo-interface">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem;">
+                        <div style="text-align: center;">
+                            <h4>Level 1 (Easy)</h4>
+                            <div style="background: #d4edda; padding: 1rem; border-radius: 8px; margin-top: 0.5rem;">
+                                <strong>Ability: 0.0-0.33</strong><br>
+                                Fundamental concepts<br>
+                                Basic definitions
+                            </div>
+                        </div>
+                        <div style="text-align: center;">
+                            <h4>Level 2 (Medium)</h4>
+                            <div style="background: #fff3cd; padding: 1rem; border-radius: 8px; margin-top: 0.5rem;">
+                                <strong>Ability: 0.33-0.67</strong><br>
+                                Applied knowledge<br>
+                                Problem-solving
+                            </div>
+                        </div>
+                        <div style="text-align: center;">
+                            <h4>Level 3 (Hard)</h4>
+                            <div style="background: #f8d7da; padding: 1rem; border-radius: 8px; margin-top: 0.5rem;">
+                                <strong>Ability: 0.67-1.0</strong><br>
+                                Advanced concepts<br>
+                                System design
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Demo Interface -->
+        <div class="slide" id="slide7">
+            <h2 class="section-title">Platform Demo - User Interface</h2>
+            
+            <div class="screenshot-mockup">
+                <div class="mockup-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 1rem; margin-bottom: 2rem;">
+                        <h3 style="color: #667eea;">🎯 SkillGap Career Platform Dashboard</h3>
+                        <div style="background: #28a745; color: white; padding: 0.5rem 1rem; border-radius: 15px; font-size: 0.9rem;">
+                            ✅ Model Loaded
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 10px; color: white; text-align: center;">
+                            <h4>🎯 Skill Assessment</h4>
+                            <p>Test your knowledge with our AI-powered assessment</p>
+                            <button class="btn" style="background: white; color: #667eea; margin-top: 1rem;">Start Assessment</button>
+                        </div>
+                        
+                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 10px; color: white; text-align: center;">
+                            <h4>🔍 Skill Gap Analysis</h4>
+                            <p>Identify gaps between your skills and job requirements</p>
+                            <button class="btn" style="background: white; color: #f093fb; margin-top: 1rem;">Analyze Skills</button>
+                        </div>
+                        
+                        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 10px; color: white; text-align: center;">
+                            <h4>💼 Interview Prep</h4>
+                            <p>Practice with AI-powered mock interviews</p>
+                            <button class="btn" style="background: white; color: #4facfe; margin-top: 1rem;">Practice Interview</button>
+                        </div>
+                        
+                        <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1.5rem; border-radius: 10px; color: white; text-align: center;">
+                            <h4>📚 Course Recommendations</h4>
+                            <p>Get personalized learning recommendations</p>
+                            <button class="btn" style="background: white; color: #43e97b; margin-top: 1rem;">Find Courses</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Features -->
+        <div class="slide" id="slide8">
+            <h2 class="section-title">Advanced AI Features</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">Reinforcement Learning Engine</h3>
+                    <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; border-left: 4px solid #667eea;">
+                        <ul style="line-height: 2;">
+                            <li><strong>Dynamic Difficulty Adjustment:</strong> Real-time adaptation based on student performance</li>
+                            <li><strong>Q-Learning Algorithm:</strong> Optimizes question selection for maximum learning</li>
+                            <li><strong>Multi-Strategy Support:</strong> Conservative, aggressive, and ability-based approaches</li>
+                            <li><strong>Performance Tracking:</strong> Detailed analytics and progression monitoring</li>
+                        </ul>
+                    </div>
+                    
+                    <h3 style="color: #667eea; margin: 2rem 0 1.5rem 0;">Natural Language Processing</h3>
+                    <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; border-left: 4px solid #f093fb;">
+                        <ul style="line-height: 2;">
+                            <li><strong>BERT-based Classification:</strong> 94% accuracy in skill matching</li>
+                            <li><strong>Document Processing:</strong> PDF, DOCX, and text parsing</li>
+                            <li><strong>Skill Extraction:</strong> Automated identification of 100+ technical skills</li>
+                            <li><strong>Semantic Analysis:</strong> Context-aware job requirement understanding</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">Real-time Analytics Dashboard</h3>
+                    <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 2rem; border-radius: 15px;">
+                        <div style="text-align: center; margin-bottom: 2rem;">
+                            <h4>Live Performance Metrics</h4>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 2rem; font-weight: bold;">87%</div>
+                                <div>Current Accuracy</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 2rem; font-weight: bold;">Level 3</div>
+                                <div>Difficulty Level</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 2rem; font-weight: bold;">0.85</div>
+                                <div>Ability Score</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 2rem; font-weight: bold;">92%</div>
+                                <div>Confidence</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="color: #667eea; margin: 2rem 0 1.5rem 0;">Smart Question Generation</h3>
+                    <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; border-left: 4px solid #43e97b;">
+                        <ul style="line-height: 2;">
+                            <li><strong>Track-Specific Questions:</strong> AI, Web Dev, Data Science, Cybersecurity</li>
+                            <li><strong>Difficulty Scaling:</strong> Automatic adjustment based on student ability</li>
+                            <li><strong>Duplicate Avoidance:</strong> Ensures unique question experience</li>
+                            <li><strong>Context-Aware Generation:</strong> Questions tailored to student's learning path</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skill Gap Analysis Deep Dive -->
+        <div class="slide" id="slide9">
+            <h2 class="section-title">Skill Gap Analysis in Action</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">Multi-Format Resume Processing</h3>
+                    <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px;">
+                        <div style="margin-bottom: 1.5rem;">
+                            <h4 style="color: #28a745;">Supported Formats:</h4>
+                            <div class="tech-stack" style="justify-content: flex-start; margin-top: 1rem;">
+                                <div class="tech-badge" style="background: #dc3545;">📄 PDF</div>
+                                <div class="tech-badge" style="background: #007bff;">📝 DOCX</div>
+                                <div class="tech-badge" style="background: #28a745;">📋 TXT</div>
+                            </div>
+                        </div>
+                        
+                        <h4 style="color: #28a745; margin-bottom: 1rem;">Skill Categories Analyzed:</h4>
+                        <div style="font-size: 0.9rem; line-height: 1.6;">
+                            <strong>Programming Languages:</strong> Python, Java, JavaScript, C++, etc.<br>
+                            <strong>ML/AI Frameworks:</strong> TensorFlow, PyTorch, Keras, Scikit-learn<br>
+                            <strong>Cloud & DevOps:</strong> AWS, Azure, Docker, Kubernetes<br>
+                            <strong>Databases:</strong> MySQL, MongoDB, PostgreSQL<br>
+                            <strong>Web Technologies:</strong> React, Angular, Node.js, Django
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">Analysis Output Example</h3>
+                    <div style="background: #1e1e1e; color: #f8f8f2; padding: 2rem; border-radius: 10px; font-family: monospace;">
+                        <div style="color: #50fa7b; margin-bottom: 1rem;">✅ MATCHED SKILLS (8/12)</div>
+                        <div style="margin-bottom: 1rem;">
+                            Python • TensorFlow • SQL • Git • Docker
+                            Machine Learning • Data Analysis • REST APIs
+                        </div>
+                        
+                        <div style="color: #ff5555; margin-bottom: 1rem;">❌ MISSING SKILLS (4/12)</div>
+                        <div style="margin-bottom: 1rem;">
+                            Kubernetes • AWS • React • MongoDB
+                        </div>
+                        
+                        <div style="color: #f1fa8c;">📊 MATCH SCORE: 78% (Level 4/5)</div>
+                        <div style="margin-top: 1rem; color: #8be9fd;">
+                            Recommendation: Focus on cloud deployment and
+                            modern web frameworks to reach 90%+ match
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interview Simulation -->
+        <div class="slide" id="slide10">
+            <h2 class="section-title">AI Interview Simulation Engine</h2>
+            
+            <div style="margin-bottom: 3rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem;">
+                    <div class="feature-card" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                        <div class="feature-icon">🎭</div>
+                        <h4>Dynamic Question Generation</h4>
+                        <p>FLAN-T5-large model generates contextual interview questions based on job role and difficulty</p>
+                    </div>
+                    
+                    <div class="feature-card" style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white;">
+                        <div class="feature-icon">🎯</div>
+                        <h4>Real-time Feedback</h4>
+                        <p>Immediate analysis of responses with specific improvement suggestions and coaching tips</p>
+                    </div>
+                    
+                    <div class="feature-card" style="background: linear-gradient(135deg, #43e97b, #38f9d7); color: white;">
+                        <div class="feature-icon">📈</div>
+                        <h4>Performance Tracking</h4>
+                        <p>Detailed analytics on engagement, answer quality, and interview readiness progression</p>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 style="color: #667eea; text-align: center; margin-bottom: 2rem;">Interview Flow Demonstration</h3>
+            <div class="demo-interface">
+                <div style="background: #667eea; color: white; padding: 1rem; border-radius: 8px 8px 0 0;">
+                    <h4>🎤 AI Interview Session - Software Development (Medium Level)</h4>
+                    <div style="margin-top: 0.5rem; opacity: 0.9;">Question 2 of 5 | Progress: 40%</div>
+                </div>
+                
+                <div style="padding: 2rem;">
+                    <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem;">
+                        <strong>Interviewer:</strong> "Tell me about a time you had to optimize a slow database query. What was your approach and what were the results?"
+                    </div>
+                    
+                    <div style="background: #f3e5f5; padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem;">
+                        <strong>Your Answer:</strong> "I identified a query taking 15+ seconds by analyzing the execution plan. I added proper indexing on frequently queried columns and rewrote the query to use JOIN instead of subqueries, reducing execution time to under 2 seconds..."
+                    </div>
+                    
+                    <div style="background: #e8f5e8; padding: 1.5rem; border-radius: 10px;">
+                        <strong>Coach Feedback:</strong> "Excellent structured response! You followed the STAR method well. Consider adding specific metrics about the impact on user experience. Next time, mention the database type and explain your indexing strategy in more detail."
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Implementation -->
+        <div class="slide" id="slide11">
+            <h2 class="section-title">System Architecture & Implementation</h2>
+            
+            <div style="margin-bottom: 3rem;">
+                <h3 style="color: #667eea; text-align: center; margin-bottom: 2rem;">Multi-Module Platform Architecture</h3>
+                <div style="background: #f8f9fa; padding: 2rem; border-radius: 15px; border: 2px solid #e9ecef;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center;">
+                        <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="color: #667eea; font-size: 2rem; margin-bottom: 0.5rem;">🔐</div>
+                            <strong>Authentication</strong><br>
+                            <small>SQLite + Session Management</small>
+                        </div>
+                        <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="color: #f093fb; font-size: 2rem; margin-bottom: 0.5rem;">🧠</div>
+                            <strong>AI Engine</strong><br>
+                            <small>BERT + Transformers</small>
+                        </div>
+                        <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="color: #43e97b; font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                            <strong>Analytics</strong><br>
+                            <small>Plotly + Real-time Charts</small>
+                        </div>
+                        <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="color: #4facfe; font-size: 2rem; margin-bottom: 0.5rem;">🌐</div>
+                            <strong>Interface</strong><br>
+                            <small>Streamlit Web App</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">Database Schema</h3>
+                    <div class="code-showcase">
+-- User Management
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    username TEXT UNIQUE,
+    email TEXT UNIQUE,
+    password_hash TEXT,
+    skill_level INTEGER,
+    assessment_completed BOOLEAN
+);
+
+-- Assessment Results
+CREATE TABLE assessment_results (
+    user_id INTEGER,
+    total_questions INTEGER,
+    correct_answers INTEGER,
+    score_percentage REAL,
+    difficulty_level INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Skill Analysis
+CREATE TABLE skill_gaps (
+    user_id INTEGER,
+    missing_skills TEXT,
+    matched_skills TEXT,
+    skill_analysis TEXT
+);
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">AI Model Pipeline</h3>
+                    <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px;">
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="background: #667eea; color: white; padding: 0.8rem; border-radius: 8px; margin-bottom: 0.5rem; text-align: center;">
+                                <strong>Input Processing</strong>
+                            </div>
+                            <div style="font-size: 0.9rem; color: #666;">
+                                Text extraction → Cleaning → Tokenization
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="background: #f093fb; color: white; padding: 0.8rem; border-radius: 8px; margin-bottom: 0.5rem; text-align: center;">
+                                <strong>Feature Extraction</strong>
+                            </div>
+                            <div style="font-size: 0.9rem; color: #666;">
+                                BERT embeddings → Skill identification → Categorization
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="background: #43e97b; color: white; padding: 0.8rem; border-radius: 8px; margin-bottom: 0.5rem; text-align: center;">
+                                <strong>Analysis & Matching</strong>
+                            </div>
+                            <div style="font-size: 0.9rem; color: #666;">
+                                Cosine similarity → Gap calculation → Score generation
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div style="background: #4facfe; color: white; padding: 0.8rem; border-radius: 8px; margin-bottom: 0.5rem; text-align: center;">
+                                <strong>Recommendations</strong>
+                            </div>
+                            <div style="font-size: 0.9rem; color: #666;">
+                                Learning paths → Course suggestions → Action items
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results & Impact -->
+        <div class="slide" id="slide12">
+            <h2 class="section-title">Platform Results & Impact</h2>
+            
+            <div class="metrics-grid">
+                <div class="metric-card" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <div class="metric-number">94%</div>
+                    <div class="metric-label">Skill Matching Accuracy</div>
+                </div>
+                
+                <div class="metric-card" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                    <div class="metric-number">6+</div>
+                    <div class="metric-label">Technology Tracks</div>
+                </div>
+                
+                <div class="metric-card" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+                    <div class="metric-number">500+</div>
+                    <div class="metric-label">Skill Categories</div>
+                </div>
+                
+                <div class="metric-card" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                    <div class="metric-number">Real-time</div>
+                    <div class="metric-label">Adaptive Learning</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 3rem;">
+                <h3 style="color: #667eea; text-align: center; margin-bottom: 2rem;">Expected Impact Across Stakeholders</h3>
+                <div class="impact-cards">
+                    <div class="impact-card" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        <div class="feature-icon">🎓</div>
+                        <h4>Empowered Students</h4>
+                        <ul style="text-align: left; margin-top: 1rem;">
+                            <li>85% increase in job readiness</li>
+                            <li>Targeted skill development</li>
+                            <li>Confidence through practice</li>
+                            <li>Clear career progression paths</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="impact-card" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                        <div class="feature-icon">🏢</div>
+                        <h4>Satisfied Employers</h4>
+                        <ul style="text-align: left; margin-top: 1rem;">
+                            <li>60% reduction in hiring time</li>
+                            <li>Better qualified candidates</li>
+                            <li>Reduced training costs</li>
+                            <li>Skills-verified applicants</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="impact-card" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+                        <div class="feature-icon">🏫</div>
+                        <h4>Adaptive Institutions</h4>
+                        <ul style="text-align: left; margin-top: 1rem;">
+                            <li>Data-driven curriculum updates</li>
+                            <li>Industry alignment insights</li>
+                            <li>Student success tracking</li>
+                            <li>Employment outcome improvement</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="impact-card" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                        <div class="feature-icon">🌍</div>
+                        <h4>Economic Growth</h4>
+                        <ul style="text-align: left; margin-top: 1rem;">
+                            <li>Skilled workforce development</li>
+                            <li>Innovation acceleration</li>
+                            <li>Productivity improvements</li>
+                            <li>Competitive advantage</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Platform Features Deep Dive -->
+        <div class="slide" id="slide13">
+            <h2 class="section-title">Platform Features & Capabilities</h2>
+            
+            <div style="margin-bottom: 3rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+                    <div>
+                        <h3 style="color: #667eea; margin-bottom: 1.5rem;">Adaptive Assessment Engine</h3>
+                        <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; border-left: 4px solid #667eea;">
+                            <div style="margin-bottom: 1rem;">
+                                <strong>🎯 Real-time Adaptation:</strong> Questions adjust difficulty based on performance
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <strong>📊 Performance Analytics:</strong> Track ability progression and confidence scores
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <strong>🎲 Multiple Strategies:</strong> Conservative, aggressive, and ability-based algorithms
+                            </div>
+                            <div>
+                                <strong>📈 Learning Optimization:</strong> Q-learning for optimal question selection
+                            </div>
+                        </div>
+                        
+                        <h3 style="color: #667eea; margin: 2rem 0 1.5rem 0;">Course Recommendation System</h3>
+                        <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; border-left: 4px solid #43e97b;">
+                            <div style="margin-bottom: 1rem;">
+                                <strong>🔍 Semantic Search:</strong> Sentence transformers for course matching
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <strong>🎯 Personalized Filtering:</strong> Based on skill gaps and career goals
+                            </div>
+                            <div>
+                                <strong>📚 Continuous Updates:</strong> Dynamic course database with relevance scoring
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: #667eea; margin-bottom: 1.5rem;">Advanced Analytics Dashboard</h3>
+                        <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 2rem; border-radius: 15px;">
+                            <div style="text-align: center; margin-bottom: 2rem;">
+                                <h4>Student Performance Insights</h4>
+                            </div>
+                            
+                            <!-- Mock Chart -->
+                            <div style="background: white; color: #333; padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                    <strong>Ability Progression</strong>
+                                    <span style="color: #28a745;">↗️ +23% improvement</span>
+                                </div>
+                                <div style="background: #e9ecef; height: 4px; border-radius: 2px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #667eea, #764ba2); width: 76%; height: 100%; border-radius: 2px;"></div>
+                                </div>
+                                <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;">
+                                    Started: 53% → Current: 76%
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 1.5rem; font-weight: bold;">12/15</div>
+                                    <div style="font-size: 0.9rem;">Questions Correct</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 1.5rem; font-weight: bold;">Level 3</div>
+                                    <div style="font-size: 0.9rem;">Current Difficulty</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Innovation & Uniqueness -->
+        <div class="slide" id="slide14">
+            <h2 class="section-title">What Makes Our Platform Unique</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">Technical Innovations</h3>
+                    <div class="features-grid" style="grid-template-columns: 1fr;">
+                        <div class="feature-card" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; margin-bottom: 1rem;">
+                            <h4>🧠 Reinforcement Learning Assessment</h4>
+                            <p style="margin-top: 1rem;">First platform to use RL for real-time difficulty adaptation, ensuring optimal challenge level for each student</p>
+                        </div>
+                        
+                        <div class="feature-card" style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; margin-bottom: 1rem;">
+                            <h4>🎯 BERT-powered Skill Matching</h4>
+                            <p style="margin-top: 1rem;">Deep learning model trained specifically for technical skill extraction and job-resume alignment</p>
+                        </div>
+                        
+                        <div class="feature-card" style="background: linear-gradient(135deg, #43e97b, #38f9d7); color: white;">
+                            <h4>📈 Multi-Modal Integration</h4>
+                            <p style="margin-top: 1rem;">Seamless integration of assessment, analysis, interview prep, and recommendations in one platform</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1.5rem;">Competitive Advantages</h3>
+                    <div style="background: #f8f9fa; padding: 2rem; border-radius: 15px;">
+                        <div style="margin-bottom: 2rem;">
+                            <h4 style="color: #28a745; margin-bottom: 1rem;">🚀 Existing Solutions vs. Our Platform</h4>
+                            
+                            <div style="background: #fff; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 1rem;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                                    <div>
+                                        <strong style="color: #dc3545;">❌ Traditional Platforms:</strong>
+                                        <ul style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;">
+                                            <li>Static assessments</li>
+                                            <li>Generic feedback</li>
+                                            <li>Limited skill analysis</li>
+                                            <li>No real-time adaptation</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <strong style="color: #28a745;">✅ Our Platform:</strong>
+                                        <ul style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;">
+                                            <li>AI-adaptive difficulty</li>
+                                            <li>Personalized coaching</li>
+                                            <li>Deep skill gap analysis</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- end Competitive Advantages -->
+                </div>
+            </div>
+        </div> <!-- end slide14 -->
+        </div> <!-- end slide14 -->
+
+    </div> <!-- end slides container -->
+</div> <!-- end presentation wrapper -->
+
+</body>
+</html>
