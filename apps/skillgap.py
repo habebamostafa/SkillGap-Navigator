@@ -1,15 +1,7 @@
-"""
-AI Skill-Gap Analyzer - Streamlit Web Application
-Author: Senior ML Engineer
-Purpose: Deploy BERT-based skill matching model with interactive UI
-"""
-
+    
 import streamlit as st
 import pandas as pd
 import pickle
-import numpy as np
-import joblib
-## ...existing code...
 import numpy as np
 import torch
 import torch.nn as nn
@@ -60,26 +52,30 @@ st.markdown("""
     }
     .skill-tag {
         display: inline-block;
-        padding: 0.3rem 0.8rem;
-        margin: 0.2rem;
+        padding: 6px 12px;
+        margin: 4px 6px 4px 0;  /* <-- spacing between chips */
         background-color: #e3f2fd;
-        border-radius: 15px;
+        border-radius: 20px;     /* <-- rounded edges */
         font-size: 0.9rem;
         color: #1976d2;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     .missing-skill-tag {
         background-color: #ffebee;
         color: #c62828;
+        border: 1px solid rgba(198,40,40,0.2);
     }
     .recommendation-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 1.5rem;
+        padding: 2rem;
         border-radius: 10px;
-        margin: 1rem 0;
+        margin: 1.5rem 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 </style>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True) 
 
 # Initialize session state
 file_id = "12J2NhvcXlIc5ol6GIBsocr-YWQ1MAoZI"
@@ -466,18 +462,18 @@ def main():
                 # Matched Skills
                 st.markdown("#### ✅ Matched Skills")
                 if analysis['skill_gap']['matched_skills']:
-                    skills_html = ""
-                    for skill in analysis['skill_gap']['matched_skills']:
-                        skills_html += f'<span class="skill-tag">{skill}</span>'
+                    skills_html = "".join(
+                        [f'<span class="skill-tag">{skill}</span>' for skill in analysis['skill_gap']['matched_skills']]
+                    )
                     st.markdown(skills_html, unsafe_allow_html=True)
                 else:
                     st.info("No matching skills found")
                 # Additional Skills
                 st.markdown("#### 💪 Your Additional Skills")
                 if analysis['skill_gap']['additional_skills']:
-                    skills_html = ""
-                    for skill in analysis['skill_gap']['additional_skills']:
-                        skills_html += f'<span class="skill-tag">{skill}</span>'
+                    skills_html = "".join(
+                        [f'<span class="skill-tag">{skill}</span>' for skill in analysis['skill_gap']['additional_skills']]
+                    )
                     st.markdown(skills_html, unsafe_allow_html=True)
                 else:
                     st.info("No additional skills")
@@ -485,9 +481,9 @@ def main():
                 # Missing Skills
                 st.markdown("#### ❌ Missing Skills")
                 if analysis['skill_gap']['missing_skills']:
-                    skills_html = ""
-                    for skill in analysis['skill_gap']['missing_skills']:
-                        skills_html += f'<span class="skill-tag missing-skill-tag">{skill}</span>'
+                    skills_html = "".join(
+                        [f'<span class="skill-tag missing-skill-tag">{skill}</span>' for skill in analysis['skill_gap']['missing_skills']]
+                    )
                     st.markdown(skills_html, unsafe_allow_html=True)
                 else:
                     st.success("You have all required skills!")
@@ -499,11 +495,3 @@ def main():
             st.info("No analysis results yet. Please go to the Analysis tab to start.")
     
     
-    
-    # Footer
-    st.markdown("---")
-    st.markdown("""
-    <div style="text-align: center; color: #666;">
-        <p>Built with ❤️ by </p>
-    </div>
-    """, unsafe_allow_html=True)
