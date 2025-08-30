@@ -299,7 +299,7 @@ def show_main_menu():
     
     with col3:
         st.markdown("""
-        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); height: 200px;
+        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
                     border-radius: 10px; color: white; margin-bottom: 20px;'>
             <h3>💼 Interview Prep</h3>
             <p>Practice with AI-powered mock interviews</p>
