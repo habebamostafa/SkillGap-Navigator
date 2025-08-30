@@ -299,7 +299,7 @@ def show_main_menu():
     
     with col3:
         st.markdown("""
-        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); height: 200px;
                     border-radius: 10px; color: white; margin-bottom: 20px;'>
             <h3>💼 Interview Prep</h3>
             <p>Practice with AI-powered mock interviews</p>
@@ -312,7 +312,7 @@ def show_main_menu():
         st.markdown("""
         <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); height: 200px;
                     border-radius: 10px; color: white; margin-bottom: 20px;'>
-            <h3>📚 Course Recommendations</h3>
+            <h3 style="text-align: center;">📚 Course Recommendations</h3>
             <p>Get personalized learning recommendations</p>
         </div>
         """, unsafe_allow_html=True)
