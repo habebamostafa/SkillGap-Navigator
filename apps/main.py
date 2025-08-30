@@ -277,7 +277,7 @@ def show_main_menu():
     
     with col1:
         st.markdown("""
-        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 200px;
                     border-radius: 10px; color: white; margin-bottom: 20px;'>
             <h3>📝 Skill Assessment</h3>
             <p>Test your knowledge with our AI-powered assessment</p>
@@ -288,7 +288,7 @@ def show_main_menu():
     
     with col2:
         st.markdown("""
-        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); height: 200px;
                     border-radius: 10px; color: white; margin-bottom: 20px;'>
             <h3>🔍 Skill Gap Analysis</h3>
             <p>Identify gaps between your skills and job requirements</p>
@@ -299,7 +299,7 @@ def show_main_menu():
     
     with col3:
         st.markdown("""
-        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
+        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); height: 200px;
                     border-radius: 10px; color: white; margin-bottom: 20px;'>
             <h3>💼 Interview Prep</h3>
             <p>Practice with AI-powered mock interviews</p>
@@ -310,7 +310,7 @@ def show_main_menu():
     
     with col4:
         st.markdown("""
-        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); 
+        <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); height: 200px;
                     border-radius: 10px; color: white; margin-bottom: 20px;'>
             <h3>📚 Course Recommendations</h3>
             <p>Get personalized learning recommendations</p>
