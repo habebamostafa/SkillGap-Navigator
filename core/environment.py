@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 from data.questions import get_adaptive_question, generate_interview_questions, _question_manager
 
 class AdaptiveAssessmentEnv:
-    def __init__(self, questions=None, track: str = "web"):
+    def __init__(self, questions=None, track: str = "web",max_questions: int = 10):
         """
         Initialize the enhanced adaptive assessment environment
         
