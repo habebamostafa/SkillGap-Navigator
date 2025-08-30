@@ -45,6 +45,7 @@ class AdaptiveAssessmentEnv:
         self.ability_update_rate = 0.1
         self.confidence_threshold = 0.8
         self.min_questions_per_level = 2
+        self.max_questions = max_questions
 
     def reset(self, track: str = None):
         """Reset the environment for a new assessment"""
