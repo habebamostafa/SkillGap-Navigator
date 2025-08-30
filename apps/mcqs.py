@@ -564,7 +564,7 @@ def main():
             # Initialize environment and agent
             st.session_state.env = AdaptiveAssessmentEnv(
                 track=selected_track,
-                max_questions=max_questions,
+                questions=max_questions,
                 confidence_threshold=confidence_threshold
             )
             
